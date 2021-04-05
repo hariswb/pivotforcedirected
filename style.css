@@ -1,0 +1,82 @@
+@font-face {
+  font-family: Roboto;
+  src: url(./static/Roboto-Regular.ttf);
+}
+body {
+  font-family: Roboto, Arial, Helvetica, sans-serif;
+  font-size: 1em;
+}
+.container {
+  width: 1300px;
+  margin: auto;
+}
+.inputs {
+  color: black;
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.extras {
+  padding: 2px;
+  border: 1.5px dashed #333;
+  border-radius: 5px;
+}
+
+.draggable {
+  cursor: pointer;
+  display: inline-block;
+  background-color: #eee;
+  font-weight: normal;
+  margin: 5px;
+  padding: 5px;
+  border: 0px solid black;
+  border-radius: 2px;
+}
+.active {
+  background-color: #aaa;
+  color: #fff;
+}
+.group-by {
+  background-color: #fff;
+  padding: 2px;
+  border: 1.5px dashed #333;
+  border-radius: 5px;
+  margin-right: 10px;
+}
+.as-group {
+  background-color: #aaa;
+  color: #fff;
+}
+.node {
+  cursor: pointer;
+}
+.rect-side {
+}
+
+.tooltip {
+  background-color: white;
+  border: 1px solid grey;
+  border-radius: 3px;
+  padding: 0 10px 0 10px;
+  max-width: 300px;
+}
+.tooltip ul {
+  padding: 0;
+}
+.tooltip ul li {
+  list-style-type: none;
+}
+.tooltip-title {
+  font-weight: bold;
+}
+.tooltip-date {
+  color: #444;
+  font-size: 0.9rem;
+}
+.tooltip-author {
+  margin-top: 5px;
+}
+.tooltip-url {
+  margin-top: 7px;
+}

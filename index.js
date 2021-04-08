@@ -17,19 +17,18 @@ d3.json("static/adial-1.json")
   });
 
 function DrawChart(data) {
-  this.groupBy = "entity";
+  this.groupBy = "site";
   this.extras = [];
   this.data = data;
-  this.df = {
-    nodes: [],
-    links: [],
-  };
+  this.documentCounts = data.length;
+
   this.keys = ["entity", "author", "sentiment", "site", "site_type", "topic"]; //Object.keys(data[0]);
   this.setGroupBy = (value) => {
     this.groupBy = value;
     updateChart();
     updateSide();
   };
+
   this.setExtras = (k) => {
     if (this.extras.includes(k)) {
       this.extras = this.extras.filter((v) => v !== k);
@@ -38,9 +37,12 @@ function DrawChart(data) {
     }
     updateSide();
   };
+
   this.foci = [];
 
   //Static Icons
+
+  manageInputs(this.keys);
 
   const pathIcon = "./static/icons/";
   const iconUrl = {
@@ -57,12 +59,10 @@ function DrawChart(data) {
 
   //PREPARE Inputs
 
-  manageInputs(this.keys);
-
   //Draw SVG
 
-  this.width = 1300;
-  this.height = 700;
+  this.width = window.innerWidth;
+  this.height = window.innerHeight;
   //
   let scrollY = 0;
   let groupBy = this.groupBy;
@@ -76,7 +76,7 @@ function DrawChart(data) {
     nodeStrokeWidth: 2,
     legendStroke: "#ddd",
     legendFill: "whitesmoke",
-    bgColor: "white",
+    bgColor: "cornsilk",
     labelRadius: 16,
     labelCircleFill: "white",
     labelCircleStroke: "#aaa",
@@ -92,8 +92,15 @@ function DrawChart(data) {
     nodeRadius: 20,
     nodeStroke: "#aaa",
     nodeStrokeWidth: 3,
-    bgColor: "white",
+    bgColor: "azure",
     imageNodeRatio: 1.4,
+  };
+  const linkLine = {
+    stroke: "#ddd",
+    strokeWidth: 2,
+    strokeHighlight: "#3978e6",
+    opacity: 0.4,
+    opacityHighlight: 1,
   };
 
   //
@@ -107,17 +114,31 @@ function DrawChart(data) {
   const svg = d3
     .select("#chart")
     .append("svg")
-    .attr("viewBox", [0, 0, this.width, this.height])
-    .attr("preserveAspectRatio", "xMinYMin meet")
+    .attr("class", ".pivot-chart-svg")
+    .style("position", "absolute")
+    .style("z-index", "-1")
+    .style("top", 0)
+    .style("left", 0)
+    .style("width", "100%")
+    .style("height", "100%")
     .style("background-color", "white");
 
-  //layerMain
+  // Document Count
+  d3.select("#document-counts").append("text").text(this.documentCounts);
+  //Layers
+
   const layerMainBg = svg.append("g").style("background-color", main.bgColor);
-  layerMainBg
+  const layerMain = svg.append("g");
+  const layerSideBg = svg.append("g").attr("id", "side-bar");
+  const layerSide = svg.append("g");
+
+  //layerMain
+  layerMain
+    .append("g")
     .append("rect")
     .attr("x", 0)
     .attr("y", 0)
-    .attr("width", this.width - side.width)
+    .attr("width", this.width)
     .attr("height", this.height)
     .attr("fill", main.bgColor)
     .on("click", (event, d) => {
@@ -125,8 +146,7 @@ function DrawChart(data) {
       node.attr("stroke", side.nodeStroke);
     });
 
-  const layerMain = svg.append("g");
-  layerMainBg.call(
+  layerMain.call(
     d3
       .zoom()
       .extent([
@@ -140,73 +160,11 @@ function DrawChart(data) {
   const hullG = layerMain.append("g").attr("class", "hulls");
 
   // Labels Main
-  let mainLabelLines = layerMain
-    .append("g")
-    .selectAll("line")
-    .data(dimensionsGroup.map((d) => foci[d]))
-    .join("line")
-    .attr("x1", (d) => d.label.x1)
-    .attr("y1", (d) => d.label.y1)
-    .attr("x2", (d) => d.label.x2)
-    .attr("y2", (d) => d.label.y2)
-    .attr("stroke", "#aaa");
+  let mainLabelLines = layerMain.append("g").selectAll("line");
+  let mainLabelCircle = layerMain.append("g").selectAll("circle");
+  let mainLabelText = layerMain.append("g").selectAll("foreignObject");
 
-  let mainLabelCircle = layerMain
-    .append("g")
-    .selectAll("circle")
-    .data(dimensionsGroup.map((d) => foci[d]))
-    .join("circle")
-    .attr("cx", (d) => d.label.x1)
-    .attr("cy", (d) => d.label.y1)
-    .attr("r", (d) => main.labelRadius)
-    .attr("stroke", main.labelCircleStroke)
-    .attr("fill", main.labelCircleFill)
-    .on("mouseover", (event, d) => {
-      if (dimensionsGroup.length > 8) {
-        mainLabelText.attr("opacity", (t) => (t.name === d.name ? 1 : 0));
-      }
-    });
-
-  let mainLabelImage = layerMain
-    .append("g")
-    .selectAll("image")
-    .data(dimensionsGroup.map((d) => foci[d]))
-    .join("image")
-    .attr("href", iconUrl.suitcase)
-    .style("pointer-events", "none")
-    .attr("x", (d) => d.label.x1 - (main.labelRadius * main.imageNodeRatio) / 2)
-    .attr("y", (d) => d.label.y1 - (main.labelRadius * main.imageNodeRatio) / 2)
-    .attr(
-      "height",
-      (d) => main.labelRadius * main.imageNodeRatio * transformScale
-    );
-
-  let mainLabelText = layerMain
-    .append("g")
-    .selectAll("text")
-    .data(dimensionsGroup.map((d) => foci[d]))
-    .join("text")
-    .attr("id", (d, i) => "mainlabel-" + d.extra + i)
-    .style("pointer-events", "none")
-    .text((d) => d.name)
-    .attr("opacity", () => (dimensionsGroup.length > 8 ? 0 : 1))
-    .attr("x", (d, i) => {
-      const textWidth = d3
-        .select("#mainlabel-" + d.extra + i)
-        .node()
-        .getComputedTextLength();
-      return (d.label.x1 - textWidth / 2) * transformScale + transformX;
-    })
-    .attr(
-      "y",
-      (d) => (d.label.y1 - main.labelRadius - 5) * transformScale + transformY
-    );
-
-  //
-  //
-  //layer Side
-  const layerSideBg = svg.append("g").attr("id", "side-bar");
-  layerSideBg.call(
+  layerSide.call(
     d3
       .zoom()
       .extent([
@@ -217,25 +175,26 @@ function DrawChart(data) {
       .on("zoom", scrolled)
   );
 
-  const layerSide = svg.append("g");
-  layerSideBg
+  layerSide.attr("clip-path", "url(#sideClipPath)");
+
+  layerSide
     .append("rect")
     .attr("class", "rect-side")
     .attr("x", 0)
     .attr("y", 0)
-    .attr("width", side.width)
+    .attr("width", this.width * 0.3)
     .attr("height", this.height)
     .attr("fill", side.bgColor)
-    .attr("opacity", 0.9)
-    .attr("transform", `translate(${side.translateX}, 0)`)
+    .attr("opacity", 0)
+    .attr("transform", `translate(${this.width * 0.7}, 0)`)
     .on("click", () => {
-      link = link.data([], (d) => [d.source, d.target]).join("line");
-      simulation.force("link").links(links);
+      link.attr("stroke", linkLine.stroke).attr("opacity", linkLine.opacity);
       node.attr("fill", (d) =>
         d.type === "main" ? main.nodeFill : side.nodeFill
       );
       nodeSide.attr("stroke", side.nodeStroke);
     });
+
   //
 
   let nodeSide = layerSide.append("g").selectAll("circle");
@@ -253,24 +212,17 @@ function DrawChart(data) {
     .selectAll("image");
   //
   //Simulation
-  let nodes = updateNodes(this.data, this.foci);
+  let nodes = initNodes(this.data, this.foci);
+
   let links = [];
 
-  const charge = d3.forceManyBody().strength(-8).distanceMin(6);
-  const collide = d3.forceCollide(6);
+  const charge = d3
+    .forceManyBody()
+    .strength(-main.nodeRadius * 1.5)
+    .distanceMin(main.nodeRadius * 1.2);
+  const collide = d3.forceCollide(main.nodeRadius * 1.1);
   const posX = d3.forceX((d) => d.x).strength(0.1);
   const posY = d3.forceY((d) => d.y).strength(0.1);
-
-  function isolateMain(force) {
-    let initialize = force.initialize;
-    force.initialize = function () {
-      initialize.call(
-        force,
-        nodes.filter((node) => node.type === "main")
-      );
-    };
-    return force;
-  }
 
   const simulation = d3
     .forceSimulation(nodes)
@@ -312,36 +264,22 @@ function DrawChart(data) {
   let nodeImage = layerMain
     .append("g")
     .attr("id", "node-image")
-    .selectAll("image")
-    .data(nodes)
-    .join("image")
-    .style("pointer-events", "none")
-    .attr("href", function (d) {
-      if (d.type === "main") {
-        return iconUrl.document;
-      }
-    });
+    .selectAll("image");
 
   //Hull or cell wrapping the node groups
-  const line = d3.line().curve(d3.curveBasisClosed);
+  const lineHull = d3.line().curve(d3.curveBasisClosed);
 
-  let hulls = hullG
-    .selectAll("path")
-    .data(
-      dimensionsGroup.map((g) => {
-        return {
-          cluster: g,
-          nodes: node.filter((d) => d[this.groupBy] === g),
-        };
-      }),
-      (d) => d.cluster
-    )
-    .join("path")
-    .attr("d", (d) => line(d3.polygonHull(hullPoints(d.nodes))))
-    .attr("fill", main.legendFill)
-    .attr("stroke", main.legendStroke)
-    .attr("stroke-width", 2 * transformScale)
-    .attr("opacity", 1);
+  let hulls = hullG.selectAll("path");
+
+  //Tooltip
+  const tooltip = d3
+    .select("body")
+    .append("div")
+    .attr("id", "tooltip")
+    .attr("class", "tooltip")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden");
 
   //
   simulation.on("tick", (e) => {
@@ -355,6 +293,7 @@ function DrawChart(data) {
 
     const nodeImageShift = (main.nodeRadius * main.imageNodeRatio) / 2;
     const sideImageShift = (side.nodeRadius * side.imageNodeRatio) / 2;
+
     nodeImage
       .attr("height", (d) =>
         d.type === "main"
@@ -374,21 +313,15 @@ function DrawChart(data) {
 
     sideLabels.attr("transform", (d) => `translate{0,${d.y}}`);
 
-    hulls.attr("d", (d) => line(d3.polygonHull(hullPoints(d.nodes))));
-  });
-  //Tooltip
-  const tooltip = d3
-    .select("body")
-    .append("div")
-    .attr("id", "tooltip")
-    .attr("class", "tooltip")
-    .style("position", "absolute")
-    .style("z-index", "10")
-    .style("visibility", "hidden");
+    mainLabelLines.attr("x2", (d) => d.label.x2).attr("y2", (d) => d.label.y2);
 
+    hulls.attr("d", (d) => circlePathLabel(d));
+  });
   //Scrolls
 
-  simulation.alphaDecay(0);
+  simulation.alphaDecay(0).velocityDecay(0.7);
+
+  updateChart();
 
   function zoomed({ transform }) {
     transformScale = transform.k;
@@ -442,40 +375,27 @@ function DrawChart(data) {
       .attr("x2", (d) => d.label.x2 * transform.k + transform.x)
       .attr("y2", (d) => d.label.y2 * transform.k + transform.y);
 
-    const labelImageShift = (main.labelRadius * main.imageNodeRatio) / 2;
-    mainLabelImage
-      .attr(
-        "x",
-        (d) => (d.label.x1 - labelImageShift) * transform.k + transform.x
-      )
-      .attr(
-        "y",
-        (d) => (d.label.y1 - labelImageShift) * transform.k + transform.y
-      )
-      .attr(
-        "height",
-        (d) => main.labelRadius * main.imageNodeRatio * transform.k
-      );
-
     mainLabelCircle
       .attr("cx", (d) => d.label.x1 * transform.k + transform.x)
       .attr("cy", (d) => d.label.y1 * transform.k + transform.y)
-      .attr("r", (d) => main.labelRadius * transform.k);
+      .attr("r", (d) => d.label.r * transform.k);
 
     mainLabelText
-      .text((d) => d.name)
-      .attr("id", (d, i) => "mainlabel-" + d.extra + i)
-      .text((d) => d.name)
-      .attr("x", (d, i) => {
-        const textWidth = d3
-          .select("#mainlabel-" + d.extra + i)
-          .node()
-          .getComputedTextLength();
-        return (d.label.x1 - textWidth / 2) * transformScale + transformX;
-      })
+      .attr("width", (d) => baseTriangle(d.label.r) * 2 * transform.k)
+      .attr("height", (d) => baseTriangle(d.label.r) * 2 * transform.k)
+      .attr(
+        "x",
+        (d) =>
+          (d.label.x1 - baseTriangle(d.label.r)) * transform.k + transform.x
+      )
       .attr(
         "y",
-        (d) => (d.label.y1 - main.labelRadius - 5) * transformScale + transformY
+        (d) =>
+          (d.label.y1 - baseTriangle(d.label.r)) * transform.k + transform.y
+      )
+      .style(
+        "font-size",
+        (d) => `${((16 * d.label.r) / 64) * transformScale}px`
       );
 
     simulation.nodes(nodes);
@@ -533,14 +453,36 @@ function DrawChart(data) {
       node.y = scaleY(node.posY) + side.paddingTop;
       return node;
     });
+
     //
     // Create links to main chart
     //
+
     const foci = getFoci(getDimensions(this.groupBy));
 
-    nodes = updateNodes(nodes, foci);
+    nodes = simulation.nodes();
 
-    nodes = nodes.filter((node) => node.type === "main").concat(nodesExtras);
+    links = [];
+    nodesExtras
+      .map((nodeSource) => {
+        return nodes
+          .filter(
+            (nodeTarget) => nodeTarget[nodeSource.extra] === nodeSource.id
+          )
+          .map((nodeTarget) => {
+            return {
+              source: nodeTarget[nodeSource.extra],
+              target: nodeTarget.id,
+            };
+          });
+      })
+      .forEach((arr) => {
+        links = links.concat(arr);
+      });
+
+    nodes = updateNodes(nodes, this.foci)
+      .filter((node) => node.type === "main")
+      .concat(nodesExtras);
 
     node = node
       .data(nodes, (d) => d.id)
@@ -559,31 +501,42 @@ function DrawChart(data) {
       .attr("stroke", side.nodeStroke)
       .attr("stroke-width", side.nodeStrokeWidth)
       .attr("class", "node")
-      .on("click", (event, d) => {
-        links = nodes
-          .filter((node) => node.type === "main" && node[d.extra] == d.id)
-          .map((node) => {
-            return { source: d.id, target: node.id };
-          });
-        link = link.data(links, (l) => [l.source, l.target]).join("line");
-
-        link
-          .attr("id", "link")
-          .attr("stroke", "#3978e6")
-          .attr("stroke-width", "2");
-
-        const targetedNodes = links.map((l) => l.target);
-        node.attr("fill", (node) =>
-          targetedNodes.includes(node.id) ? "#3978e6" : main.nodeFill
-        );
-        nodeSide.attr("stroke", (node) =>
-          node.id === d.id ? "#3978e6" : side.nodeStroke
-        );
-
-        simulation.force("link").links(links);
-      })
       .attr("cx", (d) => d.x)
-      .attr("cy", (d) => d.y + scrollY);
+      .attr("cy", (d) => d.y + scrollY)
+      .on("click", (event, d) => {
+        link
+          .attr("stroke", (l) =>
+            l.source.id === d.id ? linkLine.strokeHighlight : linkLine.stroke
+          )
+          .attr("opacity", (l) =>
+            l.source.id === d.id ? linkLine.opacityHighlight : linkLine.opacity
+          );
+
+        const targetIds = links
+          .filter((l) => l.source.id === d.id)
+          .map((l) => l.target.id);
+
+        node.attr("fill", (node) =>
+          targetIds.includes(node.id) ? linkLine.strokeHighlight : side.stroke
+        );
+
+        nodeSide.attr("stroke", (node) =>
+          node.id === d.id ? linkLine.strokeHighlight : side.nodeStroke
+        );
+      });
+    link = link.data(links, (l) => [l.source, l.target]).join("line");
+
+    link
+      .attr("id", "link")
+      .attr("stroke", linkLine.stroke)
+      .attr("stroke-width", linkLine.strokeWidth)
+      .attr("opacity", linkLine.opacity);
+
+    //
+
+    simulation.nodes(nodes);
+
+    simulation.force("link").links(links);
 
     nodeImageSide = nodeImageSide
       .data(nodesExtras)
@@ -599,15 +552,18 @@ function DrawChart(data) {
         (d) => d.y - (side.nodeRadius * side.imageNodeRatio) / 2 + scrollY
       );
 
-    // Side Titles
+    //      Side Titles
 
     const labelsYPos = Array.from(new Set(nodesExtras.map((d) => d.posY)));
+
     let sideTitlesPos = this.extras.length > 0 ? [-1] : [];
+
     for (let i = 0; i < labelsYPos[labelsYPos.length - 1]; i++) {
       if (labelsYPos.indexOf(i) == -1) {
         sideTitlesPos.push(i);
       }
     }
+
     sideTitlesPos = sideTitlesPos.map((d, i) => {
       return { posY: d + 1, extra: this.extras[i] };
     });
@@ -622,7 +578,7 @@ function DrawChart(data) {
       .style("font-size", 16)
       .style("font-weight", "bold")
       .text((d) => d.extra)
-      .attr("x", 1050)
+      .attr("x", this.width * 0.7)
       .attr("y", (d) => scaleY(d.posY));
 
     sideTitleIcons
@@ -631,11 +587,13 @@ function DrawChart(data) {
       .attr("href", (d) => iconUrl[d.extra])
       .attr("class", "side-title-icon")
       .attr("height", side.nodeRadius * 2)
-      .attr("x", 1050 - side.nodeRadius * 2.3)
+      .attr("x", this.width * 0.7 - side.nodeRadius * 2.3)
       .attr("y", (d) => scaleY(d.posY) - side.nodeRadius - 8);
-    //Side Labels
+
+    // Side Labels
 
     d3.selectAll(".sideLabel").remove();
+
     sideLabels
       .data(nodes.filter((node) => node.type === "extra"))
       .join("text")
@@ -648,34 +606,44 @@ function DrawChart(data) {
         return `translate(${d.x},${d.y - side.nodeRadius - 10})`;
       })
       .call(wrap, 40);
-
-    link = link.data([], (d) => [d.source, d.target]).join("line");
-
-    simulation.force("link").links(links);
-    simulation.nodes(nodes);
-  }
-
-  function handleNodeClick(event, d) {
-    const dateString = new Date(d.published).toDateString();
-    d3.select("#tooltip").style("visibility", "visible").html(`
-      <ul>
-        <li class="tooltip-title">${d.title}</li>
-        <li class="tooltip-date">${dateString}</li>
-        <li class="tooltip-author">By: ${d.author}</li>
-        <li class="tooltip-url"><a href="${d.url}" target="_blank">Source</a></li>
-      </ul>
-      `);
-    tooltipPosition(event);
   }
 
   //Update Chart
+  //
+
   function updateChart() {
     const dimensionsGroup = getDimensions(this.groupBy);
     groupBy = this.groupBy;
     this.foci = getFoci(dimensionsGroup);
-    nodes = updateNodes(nodes, this.foci);
 
-    simulation.nodes(nodes);
+    simulation.force(
+      "positiion-x",
+      isolateMain(
+        d3
+          .forceX((d) => this.foci[d[groupBy]].x * transformScale + transformX)
+          .strength(0.1)
+      )
+    );
+    simulation.force(
+      "positiion-y",
+      isolateMain(
+        d3
+          .forceY((d) => this.foci[d[groupBy]].y * transformScale + transformY)
+          .strength(0.1)
+      )
+    );
+
+    simulation.nodes(updateNodes(nodes, this.foci));
+
+    nodeImage = nodeImage
+      .data(nodes)
+      .join("image")
+      .style("pointer-events", "none")
+      .attr("href", function (d) {
+        if (d.type === "main") {
+          return iconUrl.document;
+        }
+      });
 
     hulls = hulls
       .data(
@@ -688,7 +656,9 @@ function DrawChart(data) {
         (d) => d.cluster
       )
       .join("path")
-      .attr("d", (d) => line(d3.polygonHull(hullPoints(d.nodes))))
+      .attr("d", (d) => {
+        return circlePathLabel(d);
+      })
       .attr("fill", main.legendFill)
       .attr("stroke", main.legendStroke)
       .attr("stroke-width", 2 * transformScale)
@@ -708,63 +678,88 @@ function DrawChart(data) {
       .join("circle")
       .attr("cx", (d) => d.label.x1 * transformScale + transformX)
       .attr("cy", (d) => d.label.y1 * transformScale + transformY)
-      .attr("r", (d) => main.labelRadius * transformScale)
+      .attr("r", (d) => d.label.r * transformScale)
       .attr("stroke", main.labelCircleStroke)
-      .attr("fill", main.labelCircleFill)
-      .on("mouseover", (event, d) => {
-        if (dimensionsGroup.length > 8) {
-          mainLabelText.attr("opacity", (t) => (t.name === d.name ? 1 : 0));
-        }
-      });
-    mainLabelImage = mainLabelImage
-      .data(dimensionsGroup.map((d) => foci[d]))
-      .join("image")
-      .attr("href", iconUrl.suitcase)
-      .style("pointer-events", "none")
-      .attr(
-        "x",
-        (d) =>
-          (d.label.x1 - (main.labelRadius * main.imageNodeRatio) / 2) *
-            transformScale +
-          transformX
-      )
-      .attr(
-        "y",
-        (d) =>
-          (d.label.y1 - (main.labelRadius * main.imageNodeRatio) / 2) *
-            transformScale +
-          transformY
-      )
-      .attr(
-        "height",
-        (d) => main.labelRadius * main.imageNodeRatio * transformScale
-      );
+      .attr("fill", main.labelCircleFill);
 
     mainLabelText = mainLabelText
       .data(dimensionsGroup.map((d) => foci[d]))
-      .join("text")
-      .attr("opacity", () => (dimensionsGroup.length > 8 ? 0 : 1))
+      .join("foreignObject")
       .attr("id", (d, i) => "mainlabel-" + d.extra + i)
       .style("pointer-events", "none")
-      .text((d) => d.name)
-      .attr("x", (d, i) => {
-        const textWidth = d3
-          .select("#mainlabel-" + d.extra + i)
-          .node()
-          .getComputedTextLength();
-        return (d.label.x1 - textWidth / 2) * transformScale + transformX;
-      })
+      .attr("width", (d) => baseTriangle(d.label.r) * 2 * transformScale)
+      .attr("height", (d) => baseTriangle(d.label.r) * 2 * transformScale)
+      .attr(
+        "x",
+        (d) =>
+          (d.label.x1 - baseTriangle(d.label.r)) * transformScale + transformX
+      )
       .attr(
         "y",
-        (d) => (d.label.y1 - main.labelRadius - 5) * transformScale + transformY
+        (d) =>
+          (d.label.y1 - baseTriangle(d.label.r)) * transformScale + transformY
+      )
+      .style(
+        "font-size",
+        (d) => `${((16 * d.label.r) / 64) * transformScale}px`
       );
+
+    d3.selectAll(".mainlabeldiv").remove();
+    const mainLabelSpan = mainLabelText
+      .append("xhtml:div")
+      .attr("class", "mainlabeldiv")
+      .append("span")
+      .html((d) => (d.name.length > 0 ? d.name : "undefined"));
+  }
+
+  function circlePathLabel(data) {
+    let nodesPos = [];
+
+    data.nodes.each((node) => {
+      nodesPos = nodesPos.concat({ x: node.x, y: node.y });
+    });
+
+    const cx =
+      nodesPos.map((node) => node.x).reduce((sum, x) => sum + x) /
+      nodesPos.length;
+
+    const cy =
+      nodesPos.map((node) => node.y).reduce((sum, y) => sum + y) /
+      nodesPos.length;
+
+    //SideEffect
+    //
+    this.foci[data.cluster].label.x2 = cx;
+    this.foci[data.cluster].label.y2 = cy;
+    //
+    //
+
+    const maxR = d3.max(
+      nodesPos.map((node) => distance(node.x - cx, node.y - cy))
+    );
+
+    const r = maxR + main.nodeRadius * 1.5;
+
+    const p = d3.path();
+
+    p.arc(cx, cy, r, 0, Math.PI * 2);
+
+    return p;
+  }
+
+  function distance(xLength, yLength) {
+    return Math.sqrt(xLength * xLength + yLength * yLength);
+  }
+
+  function baseTriangle(radius) {
+    return Math.cos(Math.PI / 4) * radius;
   }
 
   function getDimensions(groupName) {
     return Array.from(new Set(data.map((node) => node[groupName])));
   }
 
-  function updateNodes(nodes, foci) {
+  function initNodes(nodes, foci) {
     return nodes.map((node, index) => {
       obj = node;
       if (node.type === "main") {
@@ -777,27 +772,73 @@ function DrawChart(data) {
     });
   }
 
+  function updateNodes(nodes, foci) {
+    let old = simulation.nodes();
+    return old.map((node, index) => {
+      obj = node;
+      if (node.type === "main") {
+        obj.id = index;
+      }
+      return obj;
+    });
+  }
+
   function getFoci(dimensions) {
     const foci = {};
     const foci_num = dimensions.length;
-    const chart_radius = this.height / 2;
+    const chart_radius = (this.height / 2) * 0.8;
     const center = [this.height / 2, this.height / 2];
-    const centerRadius = Math.min(this.width, this.height) / 2;
-    dimensions.forEach(function (key, i) {
+    const centerRadius = (Math.min(this.width, this.height) / 2) * 0.8;
+
+    const sorted = dimensions
+      .map((k) => {
+        const elementCounts = this.data.filter((node) => node[groupBy] === k)
+          .length;
+        return {
+          key: k,
+          counts: elementCounts,
+        };
+      })
+      .sort((a, b) => a.counts - b.counts);
+
+    sorted.forEach(function (dimension, i) {
+      const key = dimension.key;
       let angle = (2 * Math.PI * i) / foci_num;
       foci[key] = {
         name: key,
+        counts: dimension.counts,
         x: center[0] + centerRadius * Math.cos(angle),
         y: center[1] + centerRadius * Math.sin(angle),
         label: {
           x: center[0] + (centerRadius - chart_radius / 3) * Math.cos(angle),
-          y: center[0] + (centerRadius - chart_radius / 3) * Math.sin(angle),
-          x1: center[0] + (centerRadius - chart_radius * 0.5) * Math.cos(angle),
-          y1: center[0] + (centerRadius - chart_radius * 0.5) * Math.sin(angle),
+          y: center[1] + (centerRadius - chart_radius / 3) * Math.sin(angle),
+          x1:
+            center[0] +
+            ((centerRadius * 0.25 * angle) / Math.PI) * Math.cos(angle),
+          y1:
+            center[1] +
+            ((centerRadius * 0.25 * angle) / Math.PI) * Math.sin(angle),
           x2: center[0] + (centerRadius - chart_radius * 0) * Math.cos(angle),
-          y2: center[0] + (centerRadius - chart_radius * 0) * Math.sin(angle),
+          y2: center[1] + (centerRadius - chart_radius * 0) * Math.sin(angle),
+          r: 1,
         },
       };
+      foci;
+    });
+
+    sorted.reverse().forEach((dimension, i) => {
+      if (i < sorted.length - 1) {
+        const pX = foci[sorted[i].key].label.x1;
+        const pY = foci[sorted[i].key].label.y1;
+        const qX = foci[sorted[i + 1].key].label.x1;
+        const qY = foci[sorted[i + 1].key].label.y1;
+
+        const c = Math.sqrt(Math.pow(pX - qX, 2) + Math.pow(pY - qY, 2));
+
+        foci[dimension.key].label.r = c / 2;
+      } else {
+        foci[dimension.key].label.r = foci[sorted[i - 1].key].label.r / 1.1;
+      }
     });
     return foci;
   }
@@ -849,6 +890,18 @@ function DrawChart(data) {
 
   //tooltip function
   //
+  function handleNodeClick(event, d) {
+    const dateString = new Date(d.published).toDateString();
+    d3.select("#tooltip").style("visibility", "visible").html(`
+      <ul>
+        <li class="tooltip-title">${d.title}</li>
+        <li class="tooltip-date">${dateString}</li>
+        <li class="tooltip-author">By: ${d.author}</li>
+        <li class="tooltip-url"><a href="${d.url}" target="_blank">Source</a></li>
+      </ul>
+      `);
+    tooltipPosition(event);
+  }
 
   function tooltipPosition(event) {
     let ttid = "#tooltip";
@@ -882,6 +935,17 @@ function DrawChart(data) {
       .css("left", ttleft + "px");
   }
 
+  //Isolate Force To Certain Node
+  function isolateMain(force) {
+    let initialize = force.initialize;
+    force.initialize = function () {
+      initialize.call(
+        force,
+        nodes.filter((node) => node.type === "main")
+      );
+    };
+    return force;
+  }
   // Hull Cluster Cells
   //
   function hullPoints(data) {

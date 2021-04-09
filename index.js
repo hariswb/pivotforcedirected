@@ -40,6 +40,7 @@ function DrawChart(data) {
 
   this.foci = [];
 
+  this.clusters = [];
   //Static Icons
 
   manageInputs(this.keys);
@@ -104,7 +105,7 @@ function DrawChart(data) {
   };
 
   //
-  const dimensionsGroup = getDimensions(this.groupBy);
+  let dimensionsGroup = getDimensions(this.groupBy);
   this.foci = getFoci(dimensionsGroup);
 
   //
@@ -206,23 +207,25 @@ function DrawChart(data) {
     .append("g")
     .attr("class", "side-titles")
     .selectAll("text");
-  let sideTitleIcons = layerSide
-    .append("g")
-    .attr("class", "side-titles-icons")
-    .selectAll("image");
+
   //
   //Simulation
   let nodes = initNodes(this.data, this.foci);
 
   let links = [];
 
-  const charge = d3
-    .forceManyBody()
-    .strength(-main.nodeRadius * 1.5)
-    .distanceMin(main.nodeRadius * 1.2);
-  const collide = d3.forceCollide(main.nodeRadius * 1.1);
-  const posX = d3.forceX((d) => d.x).strength(0.1);
-  const posY = d3.forceY((d) => d.y).strength(0.1);
+  const charge = (strength, distanceMin) => {
+    return d3.forceManyBody().strength(strength).distanceMin(distanceMin);
+  };
+  const collide = (collisionVal) => {
+    return d3.forceCollide().radius(collisionVal);
+  };
+  const posX = (fX, strength) => {
+    return d3.forceX(fX).strength(strength);
+  };
+  const posY = (fY, strength) => {
+    return d3.forceY(fY).strength(strength);
+  };
 
   const simulation = d3
     .forceSimulation(nodes)
@@ -233,10 +236,28 @@ function DrawChart(data) {
         .id((d) => d.id)
         .strength(0)
     )
-    .force("charge", isolateMain(charge))
-    .force("collide", isolateMain(collide))
-    .force("positiion-x", isolateMain(posX))
-    .force("positiion-y", isolateMain(posY));
+    .force(
+      "charge",
+      isolateForce(
+        charge(-main.nodeRadius * 1.5, main.nodeRadius * 1.2),
+        "main"
+      )
+    )
+    .force("collide", isolateForce(collide(main.nodeRadius * 1.1), "main"))
+    .force(
+      "positiion-x",
+      isolateForce(
+        posX((d) => d.x, 0.1),
+        "main"
+      )
+    )
+    .force(
+      "positiion-y",
+      isolateForce(
+        posY((d) => d.x, 0.1),
+        "main"
+      )
+    );
 
   let link = layerMain.append("g").attr("id", "links").selectAll("line");
 
@@ -267,7 +288,6 @@ function DrawChart(data) {
     .selectAll("image");
 
   //Hull or cell wrapping the node groups
-  const lineHull = d3.line().curve(d3.curveBasisClosed);
 
   let hulls = hullG.selectAll("path");
 
@@ -319,7 +339,7 @@ function DrawChart(data) {
   });
   //Scrolls
 
-  simulation.alphaDecay(0).velocityDecay(0.7);
+  simulation.alphaDecay(0).velocityDecay(0.5);
 
   updateChart();
 
@@ -327,35 +347,36 @@ function DrawChart(data) {
     transformScale = transform.k;
     transformX = transform.x;
     transformY = transform.y;
-    simulation.force(
-      "charge",
-      isolateMain(
-        d3
-          .forceManyBody()
-          .strength(-main.nodeRadius + (1 - transform.k) * main.nodeRadius)
-          .distanceMin(main.nodeRadius * transform.k)
+
+    simulation
+      .force(
+        "charge",
+        isolateForce(
+          charge(
+            -main.nodeRadius * 1.5 * transform.k,
+            main.nodeRadius * 1.2 * transform.k
+          ),
+          "main"
+        )
       )
-    );
-    simulation.force(
-      "collide",
-      isolateMain(d3.forceCollide().radius((main.nodeRadius + 1) * transform.k))
-    );
-    simulation.force(
-      "positiion-x",
-      isolateMain(
-        d3
-          .forceX((d) => foci[d[groupBy]].x * transform.k + transform.x)
-          .strength(0.1 / transform.k)
+      .force(
+        "collide",
+        isolateForce(collide(main.nodeRadius * 1.1 * transform.k), "main")
       )
-    );
-    simulation.force(
-      "positiion-y",
-      isolateMain(
-        d3
-          .forceY((d) => foci[d[groupBy]].y * transform.k + transform.y)
-          .strength(0.1 / transform.k)
+      .force(
+        "positiion-x",
+        isolateForce(
+          posX((d) => foci[d[groupBy]].x * transform.k + transform.x, 0.1),
+          "main"
+        )
       )
-    );
+      .force(
+        "positiion-y",
+        isolateForce(
+          posY((d) => foci[d[groupBy]].y * transform.k + transform.y, 0.1),
+          "main"
+        )
+      );
 
     node.attr("r", (d) =>
       d.type === "main" ? main.nodeRadius * transform.k : side.nodeRadius
@@ -418,10 +439,31 @@ function DrawChart(data) {
   }
 
   //Update Side bar
+
+  this.sideFoci = null;
+
+  function getFociSide(extras) {
+    const fociSide = {};
+    let prevY = 0;
+    extras.forEach((extra, i) => {
+      const dimensionNum = getDimensions(extra).length;
+      const clusterRadius =
+        Math.ceil(Math.sqrt(dimensionNum)) * 2.5 * side.nodeRadius;
+      obj = {
+        x: 1100,
+        y: prevY + clusterRadius,
+      };
+      prevY = obj.y + clusterRadius;
+      fociSide[extra] = obj;
+    });
+
+    return fociSide;
+  }
+
   function updateSide() {
     nodesExtras = [];
+    this.fociSide = getFociSide(this.extras);
 
-    let checkpoint = 0;
     this.extras.forEach((extra, i) => {
       obj = {};
       getDimensions(extra).forEach((dimension, j) => {
@@ -430,39 +472,16 @@ function DrawChart(data) {
           name: dimension,
           extra: extra,
           type: "extra",
-          posX: j % 3,
-          posY: Math.floor(j / 3) + checkpoint,
         };
         nodesExtras.push(obj);
       });
       checkpoint = obj.posY + 2;
     });
-    //console.log(nodesExtras, nodesExtras.length);
-
-    const scaleX = d3.scaleLinear().domain([0, 2]).range([0, 200]);
-    const scaleY = d3
-      .scaleLinear()
-      .domain([0, nodesExtras.map((node) => node.posY)[nodesExtras.length - 1]])
-      .range([
-        side.nodeRadius * 2,
-        (nodesExtras.length + 2) * side.nodeRadius * 2,
-      ]);
-
-    nodesExtras = nodesExtras.map((node) => {
-      node.x = scaleX(node.posX) + this.width - side.width + side.paddingLeft;
-      node.y = scaleY(node.posY) + side.paddingTop;
-      return node;
-    });
-
-    //
-    // Create links to main chart
-    //
-
-    const foci = getFoci(getDimensions(this.groupBy));
 
     nodes = simulation.nodes();
 
     links = [];
+
     nodesExtras
       .map((nodeSource) => {
         return nodes
@@ -484,154 +503,138 @@ function DrawChart(data) {
       .filter((node) => node.type === "main")
       .concat(nodesExtras);
 
-    node = node
-      .data(nodes, (d) => d.id)
-      .join("circle")
-      .attr("fill", main.nodeFill);
+    node = node.data(nodes, (d) => d.id).join("circle");
 
-    scrollY = 0;
+    node.attr("r", (d) =>
+      d.type === "main" ? main.nodeRadius * transformScale : side.nodeRadius
+    );
 
-    layerSide.attr("transform", `translate(${0},${scrollY})`);
-
-    nodeSide = nodeSide.data(nodesExtras, (d) => d.id).join("circle");
-
-    nodeSide
-      .attr("r", side.nodeRadius)
-      .attr("fill", side.nodeFill)
-      .attr("stroke", side.nodeStroke)
-      .attr("stroke-width", side.nodeStrokeWidth)
-      .attr("class", "node")
-      .attr("cx", (d) => d.x)
-      .attr("cy", (d) => d.y + scrollY)
-      .on("click", (event, d) => {
-        link
-          .attr("stroke", (l) =>
-            l.source.id === d.id ? linkLine.strokeHighlight : linkLine.stroke
-          )
-          .attr("opacity", (l) =>
-            l.source.id === d.id ? linkLine.opacityHighlight : linkLine.opacity
-          );
-
-        const targetIds = links
-          .filter((l) => l.source.id === d.id)
-          .map((l) => l.target.id);
-
-        node.attr("fill", (node) =>
-          targetIds.includes(node.id) ? linkLine.strokeHighlight : side.stroke
-        );
-
-        nodeSide.attr("stroke", (node) =>
-          node.id === d.id ? linkLine.strokeHighlight : side.nodeStroke
-        );
-      });
     link = link.data(links, (l) => [l.source, l.target]).join("line");
-
     link
       .attr("id", "link")
       .attr("stroke", linkLine.stroke)
       .attr("stroke-width", linkLine.strokeWidth)
       .attr("opacity", linkLine.opacity);
 
-    //
-
     simulation.nodes(nodes);
 
     simulation.force("link").links(links);
 
-    nodeImageSide = nodeImageSide
-      .data(nodesExtras)
-      .join("image")
-      .style("pointer-events", "none")
-      .attr("href", function (d) {
-        return iconUrl[d.extra];
-      })
-      .attr("height", (d) => side.nodeRadius * side.imageNodeRatio)
-      .attr("x", (d) => d.x - (side.nodeRadius * side.imageNodeRatio) / 2)
-      .attr(
-        "y",
-        (d) => d.y - (side.nodeRadius * side.imageNodeRatio) / 2 + scrollY
+    simulation
+      .force(
+        "chargeExtra",
+        isolateForce(
+          charge(side.nodeRadius * 1.3 * 2.5, side.nodeRadius * 2.5 * 1.1),
+          "extra"
+        )
+      )
+      .force(
+        "collideExtra",
+        isolateForce(collide(side.nodeRadius * 1.2 * 2.5), "extra")
+      )
+      .force(
+        "positionxExtra",
+        isolateForce(
+          posX((d) => this.fociSide[d.extra].x, 0.1),
+          "extra"
+        )
+      )
+      .force(
+        "positionyExtra",
+        isolateForce(
+          posY((d) => this.fociSide[d.extra].y, 0.1),
+          "extra"
+        )
       );
 
-    //      Side Titles
-
-    const labelsYPos = Array.from(new Set(nodesExtras.map((d) => d.posY)));
-
-    let sideTitlesPos = this.extras.length > 0 ? [-1] : [];
-
-    for (let i = 0; i < labelsYPos[labelsYPos.length - 1]; i++) {
-      if (labelsYPos.indexOf(i) == -1) {
-        sideTitlesPos.push(i);
-      }
-    }
-
-    sideTitlesPos = sideTitlesPos.map((d, i) => {
-      return { posY: d + 1, extra: this.extras[i] };
-    });
-
-    d3.selectAll(".side-title-icon").remove();
-    d3.selectAll(".side-title").remove();
-
-    sideTitles
-      .data(sideTitlesPos)
-      .join("text")
-      .attr("class", "side-title")
-      .style("font-size", 16)
-      .style("font-weight", "bold")
-      .text((d) => d.extra)
-      .attr("x", this.width * 0.7)
-      .attr("y", (d) => scaleY(d.posY));
-
-    sideTitleIcons
-      .data(sideTitlesPos)
-      .join("image")
-      .attr("href", (d) => iconUrl[d.extra])
-      .attr("class", "side-title-icon")
-      .attr("height", side.nodeRadius * 2)
-      .attr("x", this.width * 0.7 - side.nodeRadius * 2.3)
-      .attr("y", (d) => scaleY(d.posY) - side.nodeRadius - 8);
-
-    // Side Labels
-
-    d3.selectAll(".sideLabel").remove();
-
-    sideLabels
-      .data(nodes.filter((node) => node.type === "extra"))
-      .join("text")
-      .attr("id", (d, i) => "text-" + d.extra + i)
-      .attr("class", "sideLabel")
-      .style("pointer-events", "none")
-      .style("font-size", 12)
-      .text((d) => d.id)
-      .attr("transform", (d, i) => {
-        return `translate(${d.x},${d.y - side.nodeRadius - 10})`;
-      })
-      .call(wrap, 40);
+    //    nodeImageSide = nodeImageSide
+    //      .data(nodesExtras)
+    //      .join("image")
+    //      .style("pointer-events", "none")
+    //      .attr("href", function (d) {
+    //        return iconUrl[d.extra];
+    //      })
+    //      .attr("height", (d) => side.nodeRadius * side.imageNodeRatio)
+    //      .attr("x", (d) => d.x - (side.nodeRadius * side.imageNodeRatio) / 2)
+    //      .attr(
+    //        "y",
+    //        (d) => d.y - (side.nodeRadius * side.imageNodeRatio) / 2 + scrollY
+    //      );
+    //
+    //    //      Side Titles
+    //
+    //    const labelsYPos = Array.from(new Set(nodesExtras.map((d) => d.posY)));
+    //
+    //    let sideTitlesPos = this.extras.length > 0 ? [-1] : [];
+    //
+    //    for (let i = 0; i < labelsYPos[labelsYPos.length - 1]; i++) {
+    //      if (labelsYPos.indexOf(i) == -1) {
+    //        sideTitlesPos.push(i);
+    //      }
+    //    }
+    //
+    //    sideTitlesPos = sideTitlesPos.map((d, i) => {
+    //      return { posY: d + 1, extra: this.extras[i] };
+    //    });
+    //
+    //    d3.selectAll(".side-title-icon").remove();
+    //    d3.selectAll(".side-title").remove();
+    //
+    //    sideTitles
+    //      .data(sideTitlesPos)
+    //      .join("text")
+    //      .attr("class", "side-title")
+    //      .style("font-size", 16)
+    //      .style("font-weight", "bold")
+    //      .text((d) => d.extra)
+    //      .attr("x", this.width * 0.7)
+    //      .attr("y", (d) => scaleY(d.posY));
+    //
+    //    // Side Labels
+    //
+    //    d3.selectAll(".sideLabel").remove();
+    //
+    //    sideLabels
+    //      .data(nodes.filter((node) => node.type === "extra"))
+    //      .join("text")
+    //      .attr("id", (d, i) => "text-" + d.extra + i)
+    //      .attr("class", "sideLabel")
+    //      .style("pointer-events", "none")
+    //      .style("font-size", 12)
+    //      .text((d) => d.id)
+    //      .attr("transform", (d, i) => {
+    //        return `translate(${d.x},${d.y - side.nodeRadius - 10})`;
+    //      });
   }
 
   //Update Chart
   //
 
   function updateChart() {
-    const dimensionsGroup = getDimensions(this.groupBy);
+    dimensionsGroup = getDimensions(this.groupBy);
     groupBy = this.groupBy;
     this.foci = getFoci(dimensionsGroup);
 
-    simulation.force(
-      "positiion-x",
-      isolateMain(
-        d3
-          .forceX((d) => this.foci[d[groupBy]].x * transformScale + transformX)
-          .strength(0.1)
+    simulation
+      .force(
+        "positiion-x",
+        isolateForce(
+          posX(
+            (d) => this.foci[d[groupBy]].x * transformScale + transformX,
+            0.1
+          ),
+          "main"
+        )
       )
-    );
-    simulation.force(
-      "positiion-y",
-      isolateMain(
-        d3
-          .forceY((d) => this.foci[d[groupBy]].y * transformScale + transformY)
-          .strength(0.1)
-      )
-    );
+      .force(
+        "positiion-y",
+        isolateForce(
+          posY(
+            (d) => this.foci[d[groupBy]].y * transformScale + transformY
+          ).strength(0.1),
+          "main"
+        )
+      );
 
     simulation.nodes(updateNodes(nodes, this.foci));
 
@@ -661,8 +664,7 @@ function DrawChart(data) {
       })
       .attr("fill", main.legendFill)
       .attr("stroke", main.legendStroke)
-      .attr("stroke-width", 2 * transformScale)
-      .attr("opacity", 1);
+      .attr("stroke-width", 2);
 
     mainLabelLines = mainLabelLines
       .data(dimensionsGroup.map((d) => this.foci[d]))
@@ -727,22 +729,23 @@ function DrawChart(data) {
       nodesPos.map((node) => node.y).reduce((sum, y) => sum + y) /
       nodesPos.length;
 
-    //SideEffect
-    //
-    this.foci[data.cluster].label.x2 = cx;
-    this.foci[data.cluster].label.y2 = cy;
-    //
-    //
-
     const maxR = d3.max(
       nodesPos.map((node) => distance(node.x - cx, node.y - cy))
     );
 
-    const r = maxR + main.nodeRadius * 1.5;
+    const r = maxR + main.nodeRadius * transformScale * 1.5;
 
     const p = d3.path();
 
     p.arc(cx, cy, r, 0, Math.PI * 2);
+
+    //SideEffect
+    //
+    this.foci[data.cluster].label.x2 = cx;
+    this.foci[data.cluster].label.y2 = cy;
+    this.foci.clusterR = r;
+    //
+    //
 
     return p;
   }
@@ -788,7 +791,6 @@ function DrawChart(data) {
     const foci_num = dimensions.length;
     const chart_radius = (this.height / 2) * 0.8;
     const center = [this.height / 2, this.height / 2];
-    const centerRadius = (Math.min(this.width, this.height) / 2) * 0.8;
 
     const sorted = dimensions
       .map((k) => {
@@ -797,33 +799,49 @@ function DrawChart(data) {
         return {
           key: k,
           counts: elementCounts,
+          diameterEstimate:
+            Math.ceil(Math.sqrt(elementCounts)) * main.nodeRadius,
         };
       })
       .sort((a, b) => a.counts - b.counts);
 
+    let bigCircleRadius =
+      foci_num < 10
+        ? (Math.min(this.width, this.height) / 2) * 0.8
+        : (sorted.map((d) => d.diameterEstimate).reduce((sum, d) => sum + d) /
+            Math.PI) *
+          1.5;
+
+    let prevAltAngle = 0;
     sorted.forEach(function (dimension, i) {
       const key = dimension.key;
-      let angle = (2 * Math.PI * i) / foci_num;
+
+      let normalAngle = (2 * Math.PI * i) / foci_num;
+      let altAngle = (dimension.diameterEstimate / bigCircleRadius) * Math.PI;
+
+      let angle = foci_num < 10 ? normalAngle : prevAltAngle;
+
       foci[key] = {
         name: key,
         counts: dimension.counts,
-        x: center[0] + centerRadius * Math.cos(angle),
-        y: center[1] + centerRadius * Math.sin(angle),
+        x: center[0] + bigCircleRadius * Math.cos(angle),
+        y: center[1] + bigCircleRadius * Math.sin(angle),
         label: {
-          x: center[0] + (centerRadius - chart_radius / 3) * Math.cos(angle),
-          y: center[1] + (centerRadius - chart_radius / 3) * Math.sin(angle),
+          x: center[0] + (bigCircleRadius - chart_radius / 3) * Math.cos(angle),
+          y: center[1] + (bigCircleRadius - chart_radius / 3) * Math.sin(angle),
           x1:
             center[0] +
-            ((centerRadius * 0.25 * angle) / Math.PI) * Math.cos(angle),
+            ((bigCircleRadius * 0.3 * angle) / Math.PI) * Math.cos(angle),
           y1:
             center[1] +
-            ((centerRadius * 0.25 * angle) / Math.PI) * Math.sin(angle),
-          x2: center[0] + (centerRadius - chart_radius * 0) * Math.cos(angle),
-          y2: center[1] + (centerRadius - chart_radius * 0) * Math.sin(angle),
+            ((bigCircleRadius * 0.3 * angle) / Math.PI) * Math.sin(angle),
+          x2: center[0] + bigCircleRadius * Math.cos(angle),
+          y2: center[1] + bigCircleRadius * Math.sin(angle),
           r: 1,
         },
       };
       foci;
+      prevAltAngle += altAngle;
     });
 
     sorted.reverse().forEach((dimension, i) => {
@@ -936,30 +954,14 @@ function DrawChart(data) {
   }
 
   //Isolate Force To Certain Node
-  function isolateMain(force) {
+  function isolateForce(force, nodetype) {
     let initialize = force.initialize;
     force.initialize = function () {
       initialize.call(
         force,
-        nodes.filter((node) => node.type === "main")
+        nodes.filter((node) => node.type === nodetype)
       );
     };
     return force;
-  }
-  // Hull Cluster Cells
-  //
-  function hullPoints(data) {
-    let pointArr = [];
-    const padding = main.nodeRadius * transformScale;
-    data.each((d) => {
-      const pad = d.radius + padding;
-      pointArr = pointArr.concat([
-        [d.x - pad, d.y - pad],
-        [d.x - pad, d.y + pad],
-        [d.x + pad, d.y - pad],
-        [d.x + pad, d.y + pad],
-      ]);
-    });
-    return pointArr;
   }
 }

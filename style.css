@@ -157,3 +157,37 @@ body:-webkit-full-screen {
   word-wrap: break-word;
   vertical-align: middle;
 }
+
+.side-node-text-div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  text-align: center;
+}
+.side-node-text-div span {
+  width: 100%;
+  display: inline-block;
+  color: black;
+  line-height: normal;
+  word-wrap: break-word;
+  vertical-align: middle;
+}
+
+.side-hull-text-div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  text-align: center;
+}
+.side-hull-text-div span {
+  width: 100%;
+  display: inline-block;
+  color: black;
+  line-height: normal;
+  word-wrap: break-word;
+  vertical-align: middle;
+}

@@ -1,5 +1,14 @@
 function onDragStart(event) {
   event.dataTransfer.setData("text/plain", event.target.id);
+  if (event.target.parentNode.id === "group-by") {
+    $(".group-dump").css("display", "block");
+  }
+  // const node = event.target;
+  // const parentNode = event.target.parentNode;
+  // if (parentNode.id === "group-by" && parentNode.childNodes.length > 1) {
+  //   parentNode.removeChild(node);
+  //   this.removeGroupBy(node.getAttribute("value"));
+  // }
 }
 
 function onDragOver(event) {
@@ -8,35 +17,60 @@ function onDragOver(event) {
 
 function onDrop(event) {
   const id = event.dataTransfer.getData("text");
-  const draggableElement = document.getElementById(id);
+  const draggableElement = document.getElementById(id).cloneNode(true);
   const dropzone = event.currentTarget;
 
-  if (dropzone.childNodes.length > 0) {
-    const origin = document.getElementById("extras");
-    dropzoneChild = dropzone.childNodes[0];
+  const currentGroups = d3
+    .selectAll(".as-group")
+    .nodes()
+    .map((d) => d.attributes.value.value);
 
-    //Remove dropzone content and append it to its origin
+  const dragElValue = draggableElement.getAttribute("value");
 
-    dropzoneChild.classList.remove("as-group");
-    dropzone.removeChild(dropzoneChild);
-    origin.appendChild(dropzoneChild);
+  if (
+    draggableElement.classList.contains("as-group") &&
+    dropzone.children.length > 1
+  ) {
+    dropzone.removeChild(document.getElementById(id));
+    this.removeGroupBy(dragElValue);
+    dropzone.appendChild(draggableElement);
+    this.addGroupBy(dragElValue);
   }
-  //Add the dragable element to dropzone
-  //Change the value attribute in dropzone element
 
-  draggableElement.classList.add("as-group");
-  dropzone.appendChild(draggableElement);
-  event.dataTransfer.clearData();
-  this.setGroupBy(draggableElement.getAttribute("value"));
-  if (this.extras.includes(draggableElement.getAttribute("value"))) {
-    this.setExtras(draggableElement.getAttribute("value"));
+  if (!currentGroups.includes(dragElValue)) {
+    draggableElement.classList.add("as-group");
+    dropzone.appendChild(draggableElement);
+    this.addGroupBy(dragElValue);
+    event.dataTransfer.clearData();
   }
+
+  $(".group-dump").css("display", "none");
 }
 
-function manageInputs(keys) {
+function onDragOverDump(event) {
+  event.preventDefault();
+}
+
+function onDropDump(event) {
+  const id = event.dataTransfer.getData("text");
+  const draggableElement = document.getElementById(id); //.cloneNode(true);
+  const parentDragable = document.getElementById("group-by");
+
+  if (
+    draggableElement.classList.contains("as-group") &&
+    parentDragable.children.length > 1
+  ) {
+    parentDragable.removeChild(draggableElement);
+    this.removeGroupBy(draggableElement.getAttribute("value"));
+  }
+
+  $(".group-dump").css("display", "none");
+}
+
+function manageInputs(groupBy) {
   d3.select("#extras")
     .selectAll("div")
-    .data(keys)
+    .data(this.keys)
     .join("div")
     .attr("id", (k) => k)
     .text((k) => k)
@@ -60,8 +94,16 @@ function manageInputs(keys) {
 
   //Set GroupBy default
   //
-  const defaultGroup = document.getElementById("extra-" + this.groupBy);
-  defaultGroup.classList.add("as-group");
-  const dropZone = document.getElementById("group-by");
-  dropZone.appendChild(defaultGroup);
+  d3.select(".group-dump")
+    .attr("ondragover", "onDragOverDump(event)")
+    .attr("ondrop", "onDropDump(event)");
+
+  for (let group of groupBy) {
+    const defaultGroup = document
+      .getElementById("extra-" + group)
+      .cloneNode(true);
+    defaultGroup.classList.add("as-group");
+    const dropZone = document.getElementById("group-by");
+    dropZone.appendChild(defaultGroup);
+  }
 }

@@ -1,12 +1,8 @@
 let BarChart = function (app) {
   this.layout = {}
   this.app = app
-  this.data = [];
-  this.dataRolled = []
 
   this.setLayout()
-  this.setData()
-
   this.draw()
 }
 
@@ -25,12 +21,12 @@ BarChart.prototype.addBars = function () {
   let _this = this
   this.layerBarChart
     .append("g")
-    .attr("id", "bars")
     .attr("fill", "steelblue")
     .attr("fill-opacity", 0.8)
     .selectAll("rect")
-    .data([...this.dataRolled])
+    .data([...this.app.dataRolled])
     .join("rect")
+    .attr("id", "bars")
     .attr("fill", this.layout.barFill)
     .attr("x", function (d) {
       return _this.layout.margin.left + _this.x(d[0]) - _this.barWidth / 2
@@ -62,7 +58,7 @@ BarChart.prototype.addLine = function () {
     .attr("stroke", this.layout.lineStroke)
     .attr("stroke-miterlimit", 1)
     .attr("stroke-width", 2)
-    .attr("d", line([...this.dataRolled].sort((a, b) => a[0] - b[0])));
+    .attr("d", line([...this.app.dataRolled].sort((a, b) => a[0] - b[0])));
 }
 
 
@@ -70,33 +66,30 @@ BarChart.prototype.addLine = function () {
 BarChart.prototype.draw = function () {
   let _this = this
 
-  console.log(this.dataRolled, this.data)
-
-  this.layerBarChart = this.app.svg.append("g").attr("id", "bar-chart");
+  this.layerBarChart = this.app.svg2.append("g").attr("id", "bar-chart");
 
   this.transform()
-
   this.addBg()
 
   this.setCounts()
   this.setClosingPrice()
 
   this.createScales()
-
   this.setBarWidth()
 
   this.addXAxis()
-
   this.addY1Axis()
-
   this.addY2Axis()
 
   this.addBars()
-
   this.addLine()
 
   this.addDataFilter()
 
+  this.addChartTitle()
+}
+
+BarChart.prototype.addChartTitle = function () {
   this.layerBarChart
     .append("g")
     .attr("id", "barchart-title")
@@ -112,11 +105,11 @@ BarChart.prototype.draw = function () {
     .attr("class", "bar-chart-title-span")
     .style("color", this.layout.textColor)
     .html("Daily Document Volume With Closing Share Price (ADIL)");
-
 }
 
+
+
 BarChart.prototype.addDataFilter = function () {
-  console.log(this)
   let _this = this
   let brush = d3.brushX()
     .extent([[0, this.layout.height - this.layout.margin.bottom],
@@ -128,42 +121,45 @@ BarChart.prototype.addDataFilter = function () {
     `translate(${this.layout.margin.left},${0})`
   )
 
-  let interval = d3.timeHour.every(24)
-
   function brushended(event) {
     const selection = event.selection;
+    const interval = d3.timeHour.every(24)
+
     if (!event.sourceEvent || !selection) return;
 
     const [x0, x1] = selection.map(d => interval.round(_this.x.invert(d)));
 
-    console.log(x0, x1)
 
     d3.select(this)
       .transition()
       .call(brush.move, x1 > x0 ? [x0, x1].map(_this.x) : null);
-  }
 
+    _this.app.dataRange.start = x0
+    _this.app.dataRange.end = x1
+
+    _this.app.updateData()
+  }
 }
 
 BarChart.prototype.transform = function () {
-  this.layerBarChart.attr(
+  this.app.svg2.attr(
     "transform",
     `translate(${window.innerWidth * 0.55},${0})`
   );
 }
 
 BarChart.prototype.setCounts = function () {
-  this.counts = [...this.dataRolled.values()].map((d) => d.length);
+  this.counts = [...this.app.dataRolled.values()].map((d) => d.length);
 }
 
 BarChart.prototype.setClosingPrice = function () {
-  this.closingPrice = [...this.dataRolled.values()].map((d) => d.closing_price);
+  this.closingPrice = [...this.app.dataRolled.values()].map((d) => d.closing_price);
 }
 
 BarChart.prototype.createScales = function () {
   this.x = d3
     .scaleTime()
-    .domain([d3.min(this.dataRolled.keys()), d3.max(this.dataRolled.keys())])
+    .domain([d3.min(this.app.dataRolled.keys()), d3.max(this.app.dataRolled.keys())])
     .rangeRound([0, this.layout.width - this.layout.margin.right - this.layout.margin.left]);
 
   this.y1 = d3
@@ -179,7 +175,7 @@ BarChart.prototype.createScales = function () {
 
 BarChart.prototype.setBarWidth = function () {
   const oneDay = 24 * 60 * 60 * 1000;
-  const dateDiffMs = d3.max(this.dataRolled.keys()) - d3.min(this.dataRolled.keys());
+  const dateDiffMs = d3.max(this.app.dataRolled.keys()) - d3.min(this.app.dataRolled.keys());
   const dateNumDiff = Math.round(Math.abs(dateDiffMs / oneDay));
   this.barWidth =
     (this.layout.width - this.layout.margin.left - this.layout.margin.right) / dateNumDiff;
@@ -203,7 +199,6 @@ BarChart.prototype.addXAxis = function () {
 
 
 BarChart.prototype.addY1Axis = function () {
-
   this.y1Axis = d3.axisLeft(this.y1);
   this.layerBarChart
     .append("g")
@@ -240,41 +235,13 @@ BarChart.prototype.addY2Axis = function () {
 
 }
 
-
-
-BarChart.prototype.setData = function () {
-  let _this = this
-
-  this.app.data.forEach(function (d) {
-    const obj = d;
-    const date = new Date(d.publish_date);
-    obj.date_published = date;
-    obj.date_string = date.toDateString();
-
-    _this.data.push(obj);
-  });
-
-  this.dataRolled = d3.rollup(
-    this.data,
-    (v) => {
-      const random_num = 1 + Math.random() * 2;
-      return {
-        length: v.length,
-        closing_price: random_num.toFixed(2),
-        bundle: v,
-      };
-    },
-    (d) => new Date(d.date_string)
-  );
-}
-
 BarChart.prototype.updateDarkMode = function () {
+  d3.selectAll("#bars").attr("fill", this.layout.barFill)
   d3.select("#xAxis").style("color", this.layout.textColor)
   d3.select("#y1Axis").style("color", this.layout.textColor)
   d3.select("#y2Axis").style("color", this.layout.textColor)
   d3.select("#barchart-bg").attr("fill", this.layout.bgColor)
   d3.select(".bar-chart-title-span").style("color", this.layout.textColor)
-
 }
 
 BarChart.prototype.setLayout = function () {
@@ -288,7 +255,7 @@ BarChart.prototype.setLayout = function () {
       left: 50,
       right: 50,
     },
-    barFill: function () { return _this.app.darkMode ? "#aaa" : "#ccc" },
+    barFill: function () { return _this.app.darkMode ? "#aaa" : "#333" },
     lineStroke: function () { return _this.app.darkMode ? "#3978e6" : "#3978e6" },
     bgColor: function () { return _this.app.darkMode ? "#222" : "#fff" },
     textColor: function () { return _this.app.darkMode ? "#fff" : "#111" },

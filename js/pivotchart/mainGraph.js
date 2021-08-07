@@ -395,13 +395,13 @@ MainGraph.prototype.hullPath = function (data, type) {
         });
     }
 
-    let cx =
+    let cx = nodesPos.length > 0 ?
         nodesPos.map((node) => node.x).reduce((sum, x) => sum + x) /
-        nodesPos.length;
+        nodesPos.length : 0;
 
-    let cy =
+    let cy = nodesPos.length > 0 ?
         nodesPos.map((node) => node.y).reduce((sum, y) => sum + y) /
-        nodesPos.length;
+        nodesPos.length : 0;
 
     cy = type === "main" ? cy : cy - layout.sideNodeRadius;
 
@@ -425,32 +425,44 @@ MainGraph.prototype.hullPath = function (data, type) {
     } else if (type === "extra") {
         fociSide[data.cluster].x = cx;
         fociSide[data.cluster].y = cy;
-        fociSide[data.cluster].clusterR = r;
+        fociSide[data.cluster].clusterR = nodesPos.length > 0 ? r : 0;
     }
 
-    return p;
+    return nodesPos.length > 0 ? p : "M 0 0";
 }
 
 MainGraph.prototype.getDimensions = function (groupName) {
-    return [...new Set(this.data.map((node) => node[groupName]))];
+    return [...new Set(this.pivotChart.nodes.map((node) => node[groupName]))];
 }
 
 MainGraph.prototype.setNodesExtras = function () {
-    let nodes = this.pivotChart.nodes
     let _this = this
 
     const oldExtras = [...new Set(
-        nodes.filter((d) => d.type === "extra")
+        this.pivotChart.nodes.filter((d) => d.type === "extra")
             .map((d) => d.extra)
     )]
 
     const removedExtra = oldExtras.filter(function (e) {
         return !_this.app.extras.includes(e)
-    });
+    })[0];
 
-    if (removedExtra[0] !== undefined) {
-        nodes = nodes.filter((d) => d.extra !== removedExtra[0]);
+    if (removedExtra !== undefined) {
+        this.pivotChart.nodes = this.pivotChart.nodes
+            .filter((d) => d.extra !== removedExtra[0])
         this.nodesExtras = this.nodesExtras.filter((d) => d.extra !== removedExtra[0]);
+    }
+
+    let filteredNodeExtras = this.app.extras.map(function (extra) {
+        return _this.getDimensions(extra)
+    }).flat()
+
+    filteredNodeExtras = filteredNodeExtras === undefined ? [] : filteredNodeExtras
+
+    if (filteredNodeExtras.length < this.nodesExtras.length) {
+        this.nodesExtras = this.nodesExtras.filter(function (node) {
+            return filteredNodeExtras.includes(node.id)
+        })
     }
 
     const newExtras = this.app.extras.filter((e) => !oldExtras.includes(e));
@@ -460,7 +472,7 @@ MainGraph.prototype.setNodesExtras = function () {
         _this.getDimensions(extra).forEach(function (dimension, j) {
             if (!_this.nodesExtras.map((d) => d.id).includes(dimension)) {
                 obj = {
-                    id: dimension,
+                    id: extra + dimension,
                     name: dimension,
                     extra: extra,
                     type: "extra",
@@ -469,26 +481,28 @@ MainGraph.prototype.setNodesExtras = function () {
             }
         });
     });
+
 }
 
 MainGraph.prototype.setMainLinks = function () {
     let _this = this
-    this.nodesExtras
+
+    this.pivotChart.links = this.nodesExtras
         .map(function (nodeSource) {
-            return _this.pivotChart.nodes
+            const result = _this.pivotChart.nodes
+                .filter(nodeTarget => nodeTarget.type === "main" && nodeTarget.type !== "extra")
                 .filter(
-                    (nodeTarget) => nodeTarget[nodeSource.extra] === nodeSource.id
+                    (nodeTarget) => nodeSource.extra + nodeTarget[nodeSource.extra] === nodeSource.id
                 )
                 .map((nodeTarget) => {
                     return {
-                        source: nodeTarget[nodeSource.extra],
+                        source: nodeSource.extra + nodeTarget[nodeSource.extra],
                         target: nodeTarget.id,
                         type: "side",
                     };
                 });
-        }).forEach(function (arr) {
-            _this.pivotChart.links = _this.pivotChart.links.concat(arr);
-        });
+            return result
+        }).flat()
 
 }
 
@@ -569,21 +583,14 @@ MainGraph.prototype.renderLink = function () {
 
 MainGraph.prototype.updateSide = function () {
     let _this = this
-    let extras = this.extras
-    let fociSide = this.fociSide
 
-
-    this.pivotChart.nodes = this.simulation.nodes();
+    // this.pivotChart.nodes = this.simulation.nodes()
 
     this.setNodesExtras()
 
-    this.fociSide = this.getFociSide(extras);
+    this.fociSide = this.getFociSide(this.extras);
 
-    this.pivotChart.links = [];
-
-    this.setMainLinks()
-
-    this.pivotChart.nodes = this.simulation.nodes().map((node, index) => {
+    this.pivotChart.nodes = this.pivotChart.nodes.map((node, index) => {
         obj = node;
         if (node.type === "main") {
             obj.id = index;
@@ -591,16 +598,14 @@ MainGraph.prototype.updateSide = function () {
         return obj;
     });
 
-    this.pivotChart.nodes = this.pivotChart.nodes.filter((node) => node.type === "main").concat(this.nodesExtras);
+    this.pivotChart.nodes = this.pivotChart.nodes
+        .filter((node) => node.type === "main"
+        ).concat(this.nodesExtras);
 
     this.renderNode()
 
+    this.setMainLinks()
     this.renderLink()
-
-    this.simulation.nodes(this.pivotChart.nodes);
-
-
-    this.simulation.force("link").links(this.pivotChart.links);
 
     this.simulation
         .force(
@@ -642,6 +647,10 @@ MainGraph.prototype.updateSide = function () {
                 "extra"
             )
         );
+
+    this.simulation.nodes(this.pivotChart.nodes);
+
+    this.simulation.force("link").links(this.pivotChart.links);
 
     this.simulation.alpha(1).restart();
 
@@ -712,9 +721,11 @@ MainGraph.prototype.updateSide = function () {
 
     //Side hull text
 
+
     this.sideHullsText = this.sideHullsText
         .data(extrasClusters)
         .join("foreignObject")
+        .attr("class", "side-hull-text")
         .attr("width", function (d) {
             return _this.fociSide[d.cluster].clusterR
         })
@@ -729,7 +740,6 @@ MainGraph.prototype.updateSide = function () {
         .append("span")
         .style("color", this.layout.sideFontColor)
         .html((d) => d.counts + " " + d.cluster);
-    //
 
     this.sideNodeText = this.sideNodeText
         .data(this.pivotChart.nodes)

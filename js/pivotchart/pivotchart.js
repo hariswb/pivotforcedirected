@@ -75,6 +75,11 @@ PivotChart.prototype.draw = function () {
     this.mainGraph.startSimulation()
 }
 
+PivotChart.prototype.restartChart = function () {
+    this.setNodes()
+    this.updateChart()
+}
+
 PivotChart.prototype.documentCounts = function () {
     let _this = this
 
@@ -130,12 +135,12 @@ PivotChart.prototype.brighten = function (color) {
 
 
 PivotChart.prototype.setNodes = function () {
-    this.nodes = this.data.map((d, index) => {
+    this.nodes = this.app.data.map((d, index) => {
         const obj = d;
         obj.id = index;
+        obj.type = "main"
         return obj;
     });
-
 }
 
 PivotChart.prototype.addBackground = function () {

@@ -40,6 +40,7 @@ PivotChart.prototype.updateDarkMode = function () {
     d3.select("#document-counts").style("color", this.layout.textColor);
     d3.selectAll(".input-title").style("color", this.layout.textColor);
     d3.select(".group-by").style("background-color", this.layout.inputBg);
+    d3.selectAll(".side-text").style("color", this.layout.sideFontColor);
 }
 
 PivotChart.prototype.draw = function () {

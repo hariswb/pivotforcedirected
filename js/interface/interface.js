@@ -24,11 +24,14 @@ Interface.prototype.setElements = function () {
         })
 
         extra.addEventListener("click", function (event) {
-            if (extras.includes(key)) {
+            console.log("oi")
+
+            if (_this.app.extras.includes(key)) {
                 document.getElementById(`extra-${key}`).classList.remove("active");
-            } else {
+            } else if (!_this.app.extras.includes(key)) {
                 document.getElementById(`extra-${key}`).classList.add("active");
             }
+
             _this.app.setExtras(key)
         })
 

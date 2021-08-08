@@ -79,12 +79,13 @@ BarChart.prototype.draw = function () {
 
   this.addXAxis()
   this.addY1Axis()
-  this.addY2Axis()
+  // this.addY2Axis()
 
   this.addBars()
-  this.addLine()
+  // this.addLine()
 
   this.addDataFilter()
+  // this.addBrushTip()
 
   this.addChartTitle()
 }
@@ -111,15 +112,22 @@ BarChart.prototype.addChartTitle = function () {
 
 BarChart.prototype.addDataFilter = function () {
   let _this = this
+  let brushSize = {
+    x1: 0,
+    x2: this.layout.width - this.layout.margin.right - this.layout.margin.left,
+    y1: this.layout.height - this.layout.margin.bottom,
+    y2: this.layout.height - this.layout.margin.bottom + 30
+  }
+
   let brush = d3.brushX()
-    .extent([[0, this.layout.height - this.layout.margin.bottom],
-    [this.layout.width - this.layout.margin.right - this.layout.margin.left, this.layout.height - this.layout.margin.bottom + 30]])
+    .extent([[brushSize.x1, brushSize.y1], [brushSize.x2, brushSize.y2]])
     .on("end", brushended);
 
-  this.layerBarChart.append("g").call(brush).attr(
-    "transform",
-    `translate(${this.layout.margin.left},${0})`
-  )
+  this.layerBarChart.append("g").call(brush)
+    .call(brush.move, [brushSize.x1, brushSize.x2]).attr(
+      "transform",
+      `translate(${this.layout.margin.left},${0})`
+    )
 
   function brushended(event) {
     const selection = event.selection;
@@ -137,9 +145,45 @@ BarChart.prototype.addDataFilter = function () {
     _this.app.dataRange.start = x0
     _this.app.dataRange.end = x1
 
+    // _this.updateBrushTip()
     _this.app.updateData()
   }
 }
+
+BarChart.prototype.addBrushTip = function () {
+  let _this = this
+  this.brushTip = this.layerBarChart.append("g").attr("class", "brush-tip").attr(
+    "transform",
+    `translate(${this.layout.margin.left},${0})`
+  )
+
+  let dates = this.x.domain()
+
+  this.brushTipTexts = this.brushTip
+    .selectAll("text")
+    .data(dates)
+    .join("text")
+    .attr("x", function (d) {
+      console.log(_this.x(d))
+      return _this.x(d)
+    })
+    .attr("y", this.layout.height + 20)
+    .text(function (d) {
+      return d.getDay()
+    })
+    .style("color", this.layout.textColor)
+}
+
+BarChart.prototype.updateBrushTip = function () {
+
+
+  this.brushTipStart = this.brushTipStart
+    .attr("x", 30)
+    .attr("y", 30)
+    .text(this.app.dataRange.start)
+
+}
+
 
 BarChart.prototype.transform = function () {
   this.app.svg2.attr(

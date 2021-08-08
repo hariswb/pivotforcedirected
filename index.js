@@ -129,7 +129,7 @@ App.prototype.handleDarkMode = function () {
     const toggleDark = d3.select("#toggle-dark");
     const localStorage = window.localStorage;
 
-    darkMode =
+    this.darkMode =
         localStorage.pivotChartDarkMode === undefined
             ? toggleDark.node().checked
             : localStorage.pivotChartDarkMode;

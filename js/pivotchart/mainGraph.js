@@ -20,7 +20,7 @@ MainGraph.prototype.startSimulation = function () {
 
     this.simulation.on("tick", mainTick)
 
-    this.simulation.alphaDecay(0.005);
+    this.simulation.alphaDecay(0.001);
 
     function mainTick(e) {
         const nodeImageShift = (layout.nodeRadius * layout.imageNodeRatio) / 2;
@@ -139,7 +139,6 @@ MainGraph.prototype.getFociSide = function (extras) {
     let nodes = this.pivotChart.nodes
     let hierarchyCenter = this.pivotChart.hierarchyCenter
     let distance = this.pivotChart.distance
-    let fociSide = this.fociSide
 
     const mainNodesOuterRing = d3.max(
         nodes
@@ -445,9 +444,9 @@ MainGraph.prototype.setNodesExtras = function () {
 
     const removedExtra = oldExtras.filter(function (e) {
         return !_this.app.extras.includes(e)
-    })[0];
+    });
 
-    if (removedExtra !== undefined) {
+    if (removedExtra[0] !== undefined) {
         this.pivotChart.nodes = this.pivotChart.nodes
             .filter((d) => d.extra !== removedExtra[0])
         this.nodesExtras = this.nodesExtras.filter((d) => d.extra !== removedExtra[0]);
@@ -470,7 +469,7 @@ MainGraph.prototype.setNodesExtras = function () {
     newExtras.forEach(function (extra, i) {
         obj = {};
         _this.getDimensions(extra).forEach(function (dimension, j) {
-            if (!_this.nodesExtras.map((d) => d.id).includes(dimension)) {
+            if (!_this.nodesExtras.map((d) => d.id).includes(extra + dimension)) {
                 obj = {
                     id: extra + dimension,
                     name: dimension,
@@ -584,11 +583,7 @@ MainGraph.prototype.renderLink = function () {
 MainGraph.prototype.updateSide = function () {
     let _this = this
 
-    // this.pivotChart.nodes = this.simulation.nodes()
-
     this.setNodesExtras()
-
-    this.fociSide = this.getFociSide(this.extras);
 
     this.pivotChart.nodes = this.pivotChart.nodes.map((node, index) => {
         obj = node;
@@ -601,6 +596,8 @@ MainGraph.prototype.updateSide = function () {
     this.pivotChart.nodes = this.pivotChart.nodes
         .filter((node) => node.type === "main"
         ).concat(this.nodesExtras);
+
+    this.fociSide = this.getFociSide(this.extras);
 
     this.renderNode()
 
@@ -647,6 +644,7 @@ MainGraph.prototype.updateSide = function () {
                 "extra"
             )
         );
+
 
     this.simulation.nodes(this.pivotChart.nodes);
 
@@ -734,17 +732,20 @@ MainGraph.prototype.updateSide = function () {
 
     d3.selectAll(".side-hull-text-div").remove();
 
-    const sideHullsTextSpan = this.sideHullsText
+    this.sideHullsTextSpan = this.sideHullsText
         .append("xhtml:div")
         .attr("class", "side-hull-text-div")
         .append("span")
+        .attr("class", "side-text")
         .style("color", this.layout.sideFontColor)
         .html((d) => d.counts + " " + d.cluster);
 
+
     this.sideNodeText = this.sideNodeText
-        .data(this.pivotChart.nodes)
+        .data(this.pivotChart.nodes.filter(d => d.type === "extra"))
         .join("foreignObject")
         .attr("id", (d, i) => "sideNodeText" + d.extra + i)
+        .attr("class", "side-node-text")
         .style("pointer-events", "none")
         .attr("width", this.layout.sideNodeRadius * 4)
         .attr("height", this.layout.sideNodeRadius * 3)
@@ -752,10 +753,11 @@ MainGraph.prototype.updateSide = function () {
 
     d3.selectAll(".sideNodeTextDiv").remove();
 
-    const sideNodeTextSpan = this.sideNodeText
+    this.sideNodeTextSpan = this.sideNodeText
         .append("xhtml:div")
         .attr("class", "side-node-text-div")
         .append("span")
+        .attr("class", "side-text")
         .style("color", this.layout.sideFontColor)
         .html((d) => d.name);
 }

@@ -15,6 +15,8 @@ let App = function (rawData) {
 
     this.addSvg()
 
+    this.getDarkMode()
+
     this.interface = new Interface(this)
     this.pivotChart = new PivotChart(this)
     this.barChart = new BarChart(this)
@@ -123,6 +125,18 @@ App.prototype.filterByDate = function (data, range) {
         return start < nodeDate && nodeDate < end
     })
 }
+
+App.prototype.getDarkMode = function () {
+    let _this = this
+    const toggleDark = d3.select("#toggle-dark");
+    const localStorage = window.localStorage;
+
+    this.darkMode =
+        localStorage.pivotChartDarkMode === undefined
+            ? toggleDark.node().checked
+            : localStorage.pivotChartDarkMode;
+}
+
 
 App.prototype.handleDarkMode = function () {
     let _this = this

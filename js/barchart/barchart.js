@@ -85,7 +85,7 @@ BarChart.prototype.draw = function () {
   // this.addLine()
 
   this.addDataFilter()
-  // this.addBrushTip()
+  this.addBrushTip()
 
   this.addChartTitle()
 }
@@ -145,17 +145,20 @@ BarChart.prototype.addDataFilter = function () {
     _this.app.dataRange.start = x0
     _this.app.dataRange.end = x1
 
-    // _this.updateBrushTip()
+    _this.updateBrushTip()
     _this.app.updateData()
   }
 }
 
 BarChart.prototype.addBrushTip = function () {
   let _this = this
+
   this.brushTip = this.layerBarChart.append("g").attr("class", "brush-tip").attr(
     "transform",
     `translate(${this.layout.margin.left},${0})`
   )
+
+  let format = d3.timeFormat("%b/%d")
 
   let dates = this.x.domain()
 
@@ -163,23 +166,40 @@ BarChart.prototype.addBrushTip = function () {
     .selectAll("text")
     .data(dates)
     .join("text")
+    .text(function (d) {
+      return format(d)
+    })
+    .style("font-size", 10)
     .attr("x", function (d) {
-      return _this.x(d)
+      let textLength = this.getComputedTextLength()
+      return _this.x(d) - textLength / 2
     })
     .attr("y", this.layout.height + 20)
-    .text(function (d) {
-      return d.getDay()
-    })
-    .style("color", this.layout.textColor)
+    .attr("fill", this.layout.textColor)
+
 }
 
 BarChart.prototype.updateBrushTip = function () {
+  let _this = this
+  let newDates = [this.app.dataRange.start, this.app.dataRange.end]
 
+  let format = d3.timeFormat("%b/%d")
 
-  this.brushTipStart = this.brushTipStart
-    .attr("x", 30)
-    .attr("y", 30)
-    .text(this.app.dataRange.start)
+  this.brushTipTexts
+    .data(newDates)
+    .join("text")
+    .text(function (d) {
+      return format(d)
+    })
+    .attr("x", function (d) {
+      let textLength = this.getComputedTextLength()
+      return _this.x(d) - textLength / 2
+    })
+
+    .attr("x", function (d) {
+      let textLength = this.getComputedTextLength()
+      return _this.x(d) - textLength / 2
+    })
 
 }
 

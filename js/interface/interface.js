@@ -24,8 +24,6 @@ Interface.prototype.setElements = function () {
         })
 
         extra.addEventListener("click", function (event) {
-            console.log("oi")
-
             if (_this.app.extras.includes(key)) {
                 document.getElementById(`extra-${key}`).classList.remove("active");
             } else if (!_this.app.extras.includes(key)) {

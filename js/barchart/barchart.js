@@ -164,7 +164,6 @@ BarChart.prototype.addBrushTip = function () {
     .data(dates)
     .join("text")
     .attr("x", function (d) {
-      console.log(_this.x(d))
       return _this.x(d)
     })
     .attr("y", this.layout.height + 20)

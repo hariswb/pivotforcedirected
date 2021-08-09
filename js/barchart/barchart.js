@@ -105,7 +105,7 @@ BarChart.prototype.addChartTitle = function () {
     .append("span")
     .attr("class", "bar-chart-title-span")
     .style("color", this.layout.textColor)
-    .html("Daily Document Volume With Closing Share Price (ADIL)");
+    .html("Daily Document Volume");
 }
 
 
@@ -169,6 +169,7 @@ BarChart.prototype.addBrushTip = function () {
     .text(function (d) {
       return format(d)
     })
+    .attr("class", "brush-tips")
     .style("font-size", 10)
     .attr("x", function (d) {
       let textLength = this.getComputedTextLength()
@@ -305,6 +306,7 @@ BarChart.prototype.updateDarkMode = function () {
   d3.select("#y2Axis").style("color", this.layout.textColor)
   d3.select("#barchart-bg").attr("fill", this.layout.bgColor)
   d3.select(".bar-chart-title-span").style("color", this.layout.textColor)
+  d3.selectAll(".brush-tips").style("color", this.layout.textColor)
 }
 
 BarChart.prototype.setLayout = function () {

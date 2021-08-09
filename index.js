@@ -8,14 +8,12 @@ let App = function (rawData) {
     this.groupBy = ["site_type", "country"]; // Set default hiearchy attribute
     this.extras = [];
 
-    this.darkMode = null;
+    this.darkMode = true;
 
     this.prepareData()
     this.setData()
 
     this.addSvg()
-
-    this.getDarkMode()
 
     this.interface = new Interface(this)
     this.pivotChart = new PivotChart(this)
@@ -126,16 +124,6 @@ App.prototype.filterByDate = function (data, range) {
     })
 }
 
-App.prototype.getDarkMode = function () {
-    let _this = this
-    const toggleDark = d3.select("#toggle-dark");
-    const localStorage = window.localStorage;
-
-    this.darkMode =
-        localStorage.pivotChartDarkMode === undefined
-            ? toggleDark.node().checked
-            : localStorage.pivotChartDarkMode;
-}
 
 
 App.prototype.handleDarkMode = function () {
@@ -143,14 +131,12 @@ App.prototype.handleDarkMode = function () {
     const toggleDark = d3.select("#toggle-dark");
     const localStorage = window.localStorage;
 
-    this.darkMode =
-        localStorage.pivotChartDarkMode === undefined
-            ? toggleDark.node().checked
-            : localStorage.pivotChartDarkMode;
-
-    this.darkMode = this.darkMode === "true" ? true : false;
-
-    toggleDark.node().checked = this.darkMode;
+    if (localStorage.pivotChartDarkMode === undefined) {
+        console.log(this)
+        this.darkMode = this.darkMode
+    } else {
+        this.darkMode = this.darkMode === "true" ? true : false;
+    } toggleDark.node().checked = this.darkMode;
     this.setDarkMode();
 
     toggleDark.on("click", function (e) {

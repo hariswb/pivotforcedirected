@@ -306,7 +306,7 @@ BarChart.prototype.updateDarkMode = function () {
   d3.select("#y2Axis").style("color", this.layout.textColor)
   d3.select("#barchart-bg").attr("fill", this.layout.bgColor)
   d3.select(".bar-chart-title-span").style("color", this.layout.textColor)
-  d3.selectAll(".brush-tips").style("color", this.layout.textColor)
+  d3.selectAll(".brush-tips").attr("fill", this.layout.textColor)
 }
 
 BarChart.prototype.setLayout = function () {

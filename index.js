@@ -5,7 +5,7 @@ let App = function (rawData) {
 
     this.dataRange = { start: null, end: null }
 
-    this.groupBy = ["site_type", "country"]; // Set default hiearchy attribute
+    this.groupBy = ["author", "country"]; // Set default hiearchy attribute
     this.extras = [];
 
     this.darkMode = true;
@@ -73,6 +73,17 @@ App.prototype.setExtras = function (k) {
 
 App.prototype.setData = function () {
     this.data = this.rawData
+
+}
+
+App.prototype.getUniquesBy = function (data, key) {
+    let result = []
+    for (let d of data) {
+        if (!result.map(p => p[key]).includes(d[key])) {
+            result.push(d)
+        }
+    }
+    return result
 }
 
 App.prototype.prepareData = function () {
@@ -108,7 +119,6 @@ App.prototype.prepareData = function () {
 }
 
 App.prototype.updateData = function () {
-
     this.data = this.filterByDate(this.rawData, this.dataRange)
 
     this.pivotChart.restartChart()
@@ -125,12 +135,10 @@ App.prototype.filterByDate = function (data, range) {
 }
 
 
-
 App.prototype.handleDarkMode = function () {
     let _this = this
     const toggleDark = d3.select("#toggle-dark");
     const localStorage = window.localStorage;
-    console.log(localStorage)
 
     if (localStorage.pivotChartDarkMode) {
         const valString = localStorage.pivotChartDarkMode

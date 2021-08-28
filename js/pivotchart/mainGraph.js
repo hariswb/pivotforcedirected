@@ -257,8 +257,8 @@ MainGraph.prototype.addNode = function () {
                 _this.handleNodeClick(event, d);
                 _this.node.attr("stroke", function (node) {
                     node.id === d.id ? _this.layout.linestrokeHighlight : _this.layout.nodeStroke()
-                }
-                );
+                });
+                _this.updateColoring(event, d)
             }
         });
 
@@ -716,8 +716,6 @@ MainGraph.prototype.updateExtra = function () {
                     _this.fociExtra[d.cluster].y = e.y;
                 })
         );
-
-    //Extra hull text
 
 
     this.extraHullsText = this.extraHullsText

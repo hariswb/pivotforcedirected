@@ -47,14 +47,12 @@ PivotChart.prototype.draw = function () {
     this.layerMainBg = this.app.svg.append("g").attr("id", "layerMainBg");
     this.layerMainTransform = this.app.svg.append("g").attr("id", "initialTransform")
     this.layerMain = this.layerMainTransform.append("g").attr("id", "layerMain");
-    this.layerTree = this.app.svg.append("g").attr("id", "layerTree");
 
     this.mainGraph = new MainGraph(this)
     this.treeGraph = new TreeGraph(this, this.mainGraph)
 
 
     this.addZoom()
-    this.addInitTransform()
 
     this.mainGraph.addTooltip()
     this.mainGraph.addLink()
@@ -69,6 +67,9 @@ PivotChart.prototype.draw = function () {
 
     this.treeGraph.updateTree()
     this.mainGraph.updateMainHulls()
+
+
+    this.addInitTransform()
 
     this.documentCounts()
 
@@ -99,19 +100,7 @@ PivotChart.prototype.documentCounts = function () {
         });
 }
 
-PivotChart.prototype.addInitTransform = function () {
-    let _this = this
-    this.layerMainTransform.call(inittransform)
 
-    function inittransform(g) {
-        const k = 0.5 / _this.app.groupBy.length;
-        g.attr(
-            "transform",
-            `translate(${_this.height / 2},${300 + _this.height * k}) scale(${k})`
-        );
-    }
-
-}
 
 PivotChart.prototype.updateChart = function () {
     this.treeGraph.updateTree()
@@ -159,12 +148,29 @@ PivotChart.prototype.addBackground = function () {
         });
 }
 
+PivotChart.prototype.addInitTransform = function () {
+    let _this = this
+    const mainElements = d3.select("#layerMain")
+        .selectChildren().nodes().map(d => `#${d.id}`)
+    for (let el of mainElements) {
+        d3.select(el).call(setInitTransform)
+    }
+
+    function setInitTransform(g) {
+        const k = 0.5 / (_this.app.groupBy.length + 0.5);
+        const x = _this.height / 2
+        const y = _this.height / 2
+
+        g.attr("transform", `translate(${x},${y}) scale(${k})`);
+    }
+
+}
+
 PivotChart.prototype.addZoom = function () {
     let _this = this
 
     this.app.svg.call(
-        d3
-            .zoom()
+        d3.zoom()
             .extent([
                 [0, 0],
                 [this.width, this.height],
@@ -174,18 +180,11 @@ PivotChart.prototype.addZoom = function () {
     );
 
     function zoomed({ transform }) {
-        transformScale = transform.k;
-        transformX = transform.x;
-        transformY = transform.y;
-
         _this.layerMain.attr(
             "transform",
             `translate(${transform.x},${transform.y}) scale(${transform.k})`
         );
-        _this.layerTree.attr(
-            "transform",
-            `translate(${transform.x},${transform.y}) scale(${transform.k})`
-        );
+
     }
 
 }

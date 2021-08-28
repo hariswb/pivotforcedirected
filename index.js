@@ -68,7 +68,7 @@ App.prototype.setExtras = function (k) {
     } else {
         this.extras.push(k);
     }
-    this.pivotChart.updateChartSide()
+    this.pivotChart.updateChartExtra()
 };
 
 App.prototype.setData = function () {
@@ -130,13 +130,19 @@ App.prototype.handleDarkMode = function () {
     let _this = this
     const toggleDark = d3.select("#toggle-dark");
     const localStorage = window.localStorage;
+    console.log(localStorage)
 
-    if (localStorage.pivotChartDarkMode === undefined) {
-        console.log(this)
-        this.darkMode = this.darkMode
-    } else {
-        this.darkMode = this.darkMode === "true" ? true : false;
-    } toggleDark.node().checked = this.darkMode;
+    if (localStorage.pivotChartDarkMode) {
+        const valString = localStorage.pivotChartDarkMode
+        if (valString === "true") {
+            this.darkMode = true
+        } else {
+            this.darkMode = false
+        }
+    }
+
+    toggleDark.node().checked = this.darkMode;
+
     this.setDarkMode();
 
     toggleDark.on("click", function (e) {
@@ -158,5 +164,4 @@ d3.json("static/abt-april.json")
 
     })
     .catch(function (error) {
-        console.log(error);
     });

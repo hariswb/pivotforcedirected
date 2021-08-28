@@ -6,7 +6,7 @@ let MainGraph = function (pivotChart) {
     this.iconUrl = pivotChart.iconUrl
     this.nodes = pivotChart.nodes
     this.links = pivotChart.links
-    this.fociSide = {}
+    this.fociExtra = {}
     this.nodesExtras = [];
     this.clickedNode = pivotChart.clickedNode
 
@@ -16,7 +16,7 @@ let MainGraph = function (pivotChart) {
 MainGraph.prototype.startSimulation = function () {
     let _this = this
     let layout = this.layout
-    let fociSide = this.fociSide
+    let fociExtra = this.fociExtra
 
     this.simulation.on("tick", mainTick)
 
@@ -24,7 +24,7 @@ MainGraph.prototype.startSimulation = function () {
 
     function mainTick(e) {
         const nodeImageShift = (layout.nodeRadius * layout.imageNodeRatio) / 2;
-        const sideImageShift = (layout.sideNodeRadius * layout.imageNodeRatio) / 2;
+        const extraImageShift = (layout.extraNodeRadius * layout.imageNodeRatio) / 2;
 
         _this.link
             .attr("x1", (d) => d.source.x)
@@ -38,46 +38,46 @@ MainGraph.prototype.startSimulation = function () {
             .attr("height", (d) =>
                 d.type === "main"
                     ? _this.layout.nodeRadius * _this.layout.imageNodeRatio
-                    : _this.layout.sideNodeRadius * _this.layout.imageNodeRatio
+                    : _this.layout.extraNodeRadius * _this.layout.imageNodeRatio
             )
             .attr("x", (d) =>
-                d.type === "main" ? d.x - nodeImageShift : d.x - sideImageShift
+                d.type === "main" ? d.x - nodeImageShift : d.x - extraImageShift
             )
             .attr("y", (d) =>
-                d.type === "main" ? d.y - nodeImageShift : d.y - sideImageShift
+                d.type === "main" ? d.y - nodeImageShift : d.y - extraImageShift
             );
 
         _this.mainHulls.attr("d", function (d) {
             return _this.hullPath(d, "main")
         });
 
-        _this.sideHulls.attr("d", function (d) {
+        _this.extraHulls.attr("d", function (d) {
             return _this.hullPath(d, "extra")
         });
 
-        _this.sideNodeText
+        _this.extraNodeText
             .attr("x", (d) => {
                 if (d.type === "extra") {
-                    return d.x - _this.layout.sideNodeRadius * 2;
+                    return d.x - _this.layout.extraNodeRadius * 2;
                 }
             })
             .attr("y", (d) => {
                 if (d.type === "extra") {
-                    return d.y - _this.layout.sideNodeRadius * 4.1;
+                    return d.y - _this.layout.extraNodeRadius * 4.1;
                 }
             });
 
-        _this.sideHullsText
-            .attr("width", (d) => _this.fociSide[d.cluster].clusterR)
+        _this.extraHullsText
+            .attr("width", (d) => _this.fociExtra[d.cluster].clusterR)
             .attr("x", (d) => {
-                return _this.fociSide[d.cluster].x - _this.fociSide[d.cluster].clusterR / 2;
+                return _this.fociExtra[d.cluster].x - _this.fociExtra[d.cluster].clusterR / 2;
             })
             .attr(
                 "y",
                 (d) =>
-                    _this.fociSide[d.cluster].y -
-                    _this.fociSide[d.cluster].clusterR -
-                    _this.layout.sideNodeRadius * 2
+                    _this.fociExtra[d.cluster].y -
+                    _this.fociExtra[d.cluster].clusterR -
+                    _this.layout.extraNodeRadius * 2
             );
     }
 }
@@ -134,7 +134,7 @@ MainGraph.prototype.isolateForce = function (force, nodetype) {
     return force;
 }
 
-MainGraph.prototype.getFociSide = function (extras) {
+MainGraph.prototype.getFociExtra = function (extras) {
     let _this = this
     let nodes = this.pivotChart.nodes
     let hierarchyCenter = this.pivotChart.hierarchyCenter
@@ -148,16 +148,16 @@ MainGraph.prototype.getFociSide = function (extras) {
             })
     );
 
-    const newFociSide = {};
+    const newFociExtra = {};
     let prevY = 0;
 
     this.app.extras.forEach(function (extra, i) {
         const dimensionNum = _this.getDimensions(extra).length;
         const clusterRadius =
-            Math.ceil(Math.sqrt(dimensionNum)) * 2.5 * _this.layout.sideNodeRadius;
+            Math.ceil(Math.sqrt(dimensionNum)) * 2.5 * _this.layout.extraNodeRadius;
         let forceFactor = Math.log10(dimensionNum);
         forceFactor = forceFactor > 2 ? forceFactor + 1.5 : forceFactor;
-        if (!Object.keys(_this.fociSide).includes(extra)) {
+        if (!Object.keys(_this.fociExtra).includes(extra)) {
             obj = {
                 x: _this.pivotChart.width * 0.7 * 0.5 + mainNodesOuterRing + clusterRadius,
                 y: prevY + clusterRadius,
@@ -165,16 +165,16 @@ MainGraph.prototype.getFociSide = function (extras) {
             };
         } else {
             obj = {
-                x: _this.fociSide[extra].x,
-                y: _this.fociSide[extra].y,
+                x: _this.fociExtra[extra].x,
+                y: _this.fociExtra[extra].y,
                 forceFactor: forceFactor,
             };
         }
-        prevY = obj.y + clusterRadius + 2 * _this.layout.sideNodeRadius;
-        newFociSide[extra] = obj;
+        prevY = obj.y + clusterRadius + 2 * _this.layout.extraNodeRadius;
+        newFociExtra[extra] = obj;
     });
 
-    return newFociSide;
+    return newFociExtra;
 }
 
 MainGraph.prototype.addTooltip = function () {
@@ -287,21 +287,21 @@ MainGraph.prototype.addHulls = function () {
 
     this.mainHulls = mainHullG.selectAll("path");
 
-    let sidehullG = this.layerMain
+    let extrahullG = this.layerMain
         .append("g")
-        .attr("id", "side-hull")
-        .attr("class", "side-hulls");
+        .attr("id", "extra-hull")
+        .attr("class", "extra-hulls");
 
-    this.sideHulls = sidehullG.selectAll("path");
+    this.extraHulls = extrahullG.selectAll("path");
 
-    this.sideHullsText = this.layerMain
+    this.extraHullsText = this.layerMain
         .append("g")
-        .attr("id", "side-hull-text")
+        .attr("id", "extra-hull-text")
         .selectAll("foreignObject");
 
-    this.sideNodeText = this.layerMain
+    this.extraNodeText = this.layerMain
         .append("g")
-        .attr("id", "side-node-text")
+        .attr("id", "extra-node-text")
         .selectAll("foreignObject");
 }
 
@@ -375,13 +375,13 @@ MainGraph.prototype.clearColoring = function () {
 
 MainGraph.prototype.hullPath = function (data, type) {
     let layout = this.layout
-    let fociSide = this.fociSide
+    let fociExtra = this.fociExtra
     let clusterMap = this.pivotChart.clusterMap
     let _this = this
 
     let nodesPos = [];
     const nodeRadius =
-        type === "main" ? layout.nodeRadius : layout.sideNodeRadius;
+        type === "main" ? layout.nodeRadius : layout.extraNodeRadius;
     const nodeRMultiplier = type === "main" ? 1.5 : 2;
 
     if (type === "main") {
@@ -402,7 +402,7 @@ MainGraph.prototype.hullPath = function (data, type) {
         nodesPos.map((node) => node.y).reduce((sum, y) => sum + y) /
         nodesPos.length : 0;
 
-    cy = type === "main" ? cy : cy - layout.sideNodeRadius;
+    cy = type === "main" ? cy : cy - layout.extraNodeRadius;
 
     const maxR = d3.max(
         nodesPos.map(function (node) {
@@ -422,9 +422,9 @@ MainGraph.prototype.hullPath = function (data, type) {
         clusterMap.get(data.cluster).cy = cy;
         // foci.clusterR = r;
     } else if (type === "extra") {
-        fociSide[data.cluster].x = cx;
-        fociSide[data.cluster].y = cy;
-        fociSide[data.cluster].clusterR = nodesPos.length > 0 ? r : 0;
+        fociExtra[data.cluster].x = cx;
+        fociExtra[data.cluster].y = cy;
+        fociExtra[data.cluster].clusterR = nodesPos.length > 0 ? r : 0;
     }
 
     return nodesPos.length > 0 ? p : "M 0 0";
@@ -497,7 +497,7 @@ MainGraph.prototype.setMainLinks = function () {
                     return {
                         source: nodeSource.extra + nodeTarget[nodeSource.extra],
                         target: nodeTarget.id,
-                        type: "side",
+                        type: "extra",
                     };
                 });
             return result
@@ -515,7 +515,7 @@ MainGraph.prototype.renderNode = function () {
         })
         .attr("fill", _this.layout.nodeFill)
         .attr("r", function (d) {
-            return d.type === "main" ? _this.layout.nodeRadius : _this.layout.sideNodeRadius
+            return d.type === "main" ? _this.layout.nodeRadius : _this.layout.extraNodeRadius
         });
 }
 
@@ -580,7 +580,7 @@ MainGraph.prototype.renderLink = function () {
         .attr("opacity", this.layout.lineopacity);
 }
 
-MainGraph.prototype.updateSide = function () {
+MainGraph.prototype.updateExtra = function () {
     let _this = this
 
     this.setNodesExtras()
@@ -597,7 +597,7 @@ MainGraph.prototype.updateSide = function () {
         .filter((node) => node.type === "main"
         ).concat(this.nodesExtras);
 
-    this.fociSide = this.getFociSide(this.extras);
+    this.fociExtra = this.getFociExtra(this.extras);
 
     this.renderNode()
 
@@ -608,23 +608,23 @@ MainGraph.prototype.updateSide = function () {
         .force(
             "chargeExtra",
             _this.isolateForce(
-                _this.charge(-_this.layout.sideNodeRadius * 4.5, _this.layout.sideNodeRadius * 4.5),
+                _this.charge(-_this.layout.extraNodeRadius * 4.5, _this.layout.extraNodeRadius * 4.5),
                 "extra"
             )
         )
         .force(
             "collideExtra",
-            _this.isolateForce(_this.collide(_this.layout.sideNodeRadius * 3.6), "extra")
+            _this.isolateForce(_this.collide(_this.layout.extraNodeRadius * 3.6), "extra")
         )
         .force(
             "positionxExtra",
             _this.isolateForce(
                 _this.posX(
                     function (d) {
-                        return _this.fociSide[d.extra].x
+                        return _this.fociExtra[d.extra].x
                     },
                     function (d) {
-                        return 0.1 / _this.fociSide[d.extra].forceFactor
+                        return 0.1 / _this.fociExtra[d.extra].forceFactor
                     }
                 ),
                 "extra"
@@ -635,10 +635,10 @@ MainGraph.prototype.updateSide = function () {
             _this.isolateForce(
                 _this.posY(
                     function (d) {
-                        return _this.fociSide[d.extra].y
+                        return _this.fociExtra[d.extra].y
                     },
                     function (d) {
-                        return 0.1 / _this.fociSide[d.extra].forceFactor
+                        return 0.1 / _this.fociExtra[d.extra].forceFactor
                     }
                 ),
                 "extra"
@@ -674,11 +674,11 @@ MainGraph.prototype.updateSide = function () {
         return obj;
     });
 
-    this.sideHulls = this.sideHulls
+    this.extraHulls = this.extraHulls
         .data(extrasClusters, (d) => d.cluster)
         .join("path")
         .style("cursor", "pointer")
-        .attr("id", (d) => "sidehull-" + d.cluster)
+        .attr("id", (d) => "extrahull-" + d.cluster)
         .attr("d", function (d) {
             return _this.hullPath(d, "extra")
         })
@@ -696,7 +696,7 @@ MainGraph.prototype.updateSide = function () {
                             "positionxExtra",
                             _this.isolateForce(
                                 _this.posX(function (node) {
-                                    return node.extra === d.cluster ? e.x : _this.fociSide[node.extra].x
+                                    return node.extra === d.cluster ? e.x : _this.fociExtra[node.extra].x
                                 }, 0.1),
                                 "extra"
                             )
@@ -705,59 +705,59 @@ MainGraph.prototype.updateSide = function () {
                             "positionyExtra",
                             _this.isolateForce(
                                 _this.posY(function (node) {
-                                    return node.extra === d.cluster ? e.y : _this.fociSide[node.extra].y
+                                    return node.extra === d.cluster ? e.y : _this.fociExtra[node.extra].y
                                 }, 0.1),
                                 "extra"
                             )
                         );
                 })
                 .on("end", function (e, d) {
-                    _this.fociSide[d.cluster].x = e.x;
-                    _this.fociSide[d.cluster].y = e.y;
+                    _this.fociExtra[d.cluster].x = e.x;
+                    _this.fociExtra[d.cluster].y = e.y;
                 })
         );
 
-    //Side hull text
+    //Extra hull text
 
 
-    this.sideHullsText = this.sideHullsText
+    this.extraHullsText = this.extraHullsText
         .data(extrasClusters)
         .join("foreignObject")
-        .attr("class", "side-hull-text")
+        .attr("class", "extra-hull-text")
         .attr("width", function (d) {
-            return _this.fociSide[d.cluster].clusterR
+            return _this.fociExtra[d.cluster].clusterR
         })
-        .attr("height", this.layout.sideNodeRadius * 2)
+        .attr("height", this.layout.extraNodeRadius * 2)
         .style("font-size", 20);
 
-    d3.selectAll(".side-hull-text-div").remove();
+    d3.selectAll(".extra-hull-text-div").remove();
 
-    this.sideHullsTextSpan = this.sideHullsText
+    this.extraHullsTextSpan = this.extraHullsText
         .append("xhtml:div")
-        .attr("class", "side-hull-text-div")
+        .attr("class", "extra-hull-text-div")
         .append("span")
-        .attr("class", "side-text")
-        .style("color", this.layout.sideFontColor)
+        .attr("class", "extra-text")
+        .style("color", this.layout.extraFontColor)
         .html((d) => d.counts + " " + d.cluster);
 
 
-    this.sideNodeText = this.sideNodeText
+    this.extraNodeText = this.extraNodeText
         .data(this.pivotChart.nodes.filter(d => d.type === "extra"))
         .join("foreignObject")
-        .attr("id", (d, i) => "sideNodeText" + d.extra + i)
-        .attr("class", "side-node-text")
+        .attr("id", (d, i) => "extraNodeText" + d.extra + i)
+        .attr("class", "extra-node-text")
         .style("pointer-events", "none")
-        .attr("width", this.layout.sideNodeRadius * 4)
-        .attr("height", this.layout.sideNodeRadius * 3)
+        .attr("width", this.layout.extraNodeRadius * 4)
+        .attr("height", this.layout.extraNodeRadius * 3)
         .style("font-size", 12);
 
-    d3.selectAll(".sideNodeTextDiv").remove();
+    d3.selectAll(".extraNodeTextDiv").remove();
 
-    this.sideNodeTextSpan = this.sideNodeText
+    this.extraNodeTextSpan = this.extraNodeText
         .append("xhtml:div")
-        .attr("class", "side-node-text-div")
+        .attr("class", "extra-node-text-div")
         .append("span")
-        .attr("class", "side-text")
-        .style("color", this.layout.sideFontColor)
+        .attr("class", "extra-text")
+        .style("color", this.layout.extraFontColor)
         .html((d) => d.name);
 }

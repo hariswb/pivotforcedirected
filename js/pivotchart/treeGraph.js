@@ -123,7 +123,7 @@ TreeGraph.prototype.getTreeData = function () {
             return {
                 source: "fakeRoot",
                 target: d,
-                distance: layout.sideNodeRadius * 5,
+                distance: layout.extraNodeRadius * 5,
             };
         });
 

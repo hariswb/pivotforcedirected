@@ -34,13 +34,13 @@ PivotChart.prototype.addClusterMap = function (treeNodes) {
 PivotChart.prototype.updateDarkMode = function () {
     this.bg.attr("fill", this.layout.bgColor);
     this.mainGraph.mainHulls.attr("fill", this.layout.hullFill);
-    this.mainGraph.sideHulls.attr("fill", this.layout.hullFill);
+    this.mainGraph.extraHulls.attr("fill", this.layout.hullFill);
     this.mainGraph.node.attr("fill", this.layout.nodeFill).attr("stroke", this.layout.nodeStroke);
     this.mainGraph.nodeImage.attr("filter", this.layout.imageFilter);
     d3.select("#document-counts").style("color", this.layout.textColor);
     d3.selectAll(".input-title").style("color", this.layout.textColor);
     d3.select(".group-by").style("background-color", this.layout.inputBg);
-    d3.selectAll(".side-text").style("color", this.layout.sideFontColor);
+    d3.selectAll(".extra-text").style("color", this.layout.extraFontColor);
 }
 
 PivotChart.prototype.draw = function () {
@@ -116,13 +116,13 @@ PivotChart.prototype.addInitTransform = function () {
 PivotChart.prototype.updateChart = function () {
     this.treeGraph.updateTree()
     this.mainGraph.updateMainHulls()
-    this.mainGraph.updateSide()
+    this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
     this.documentCounts()
 }
 
-PivotChart.prototype.updateChartSide = function () {
-    this.mainGraph.updateSide()
+PivotChart.prototype.updateChartExtra = function () {
+    this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
 }
 
@@ -223,8 +223,8 @@ PivotChart.prototype.setLayout = function () {
         hullStroke: "#aaa",
         hullStrokeWidth: 1,
         hullOpacity: 0.8,
-        sideNodeRadius: 20,
-        sideFontColor: function () { return _this.app.darkMode ? "#fff" : "#222" },
+        extraNodeRadius: 20,
+        extraFontColor: function () { return _this.app.darkMode ? "#fff" : "#222" },
         linestroke: "#ddd",
         linestrokeWidth: 2,
         linestrokeHighlight: "#3978e6",

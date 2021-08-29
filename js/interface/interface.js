@@ -26,7 +26,6 @@ Interface.prototype.updateDimensions = function () {
             _this.onDragStart(event)
         })
 
-
         // extra.addEventListener("click", function (event) {
         //     if (_this.app.extras.includes(key)) {
         //         document.getElementById(`extra-${key}`).classList.remove("active");
@@ -88,36 +87,71 @@ Interface.prototype.onDrop = function (event) {
     let _this = this
     const id = event.dataTransfer.getData("text");
     const draggableElement = document.getElementById(id).cloneNode(true);
-    const dropzone = event.currentTarget;
+    const dropZone = event.currentTarget;
+
+
+    let dropZoneChildren = Array.from(dropZone.children).map(a => {
+        const child = {}
+        const rect = a.getBoundingClientRect()
+        child.centerX = rect.left + rect.width / 2
+        child.centerY = rect.bottom + rect.height / 2
+        child.dimension = a.getAttribute("value")
+        return child
+    })
+
+    const newChild = {
+        centerX: event.clientX,
+        centerY: event.clientY,
+        dimension: draggableElement.getAttribute("value")
+    }
+
+    let newGrouping = dropZoneChildren.filter(d => d.dimension !== newChild.dimension)
+
+    newGrouping.push(newChild)
+
+    newGrouping = newGrouping.sort((a, b) => (a.centerX > b.centerX) ? 1 : ((b.centerX > a.centerX) ? -1 : 0)).map(d => d.dimension)
 
     draggableElement.addEventListener("dragstart", function (event) {
         _this.onDragStart(event)
     })
 
-    const currentGroups = [...document.getElementsByClassName("as-group")].map(element => {
-        return element.getAttribute("value")
-    })
-
-    const dragElValue = draggableElement.getAttribute("value");
 
     if (
         draggableElement.classList.contains("as-group") &&
-        dropzone.children.length > 1
+        dropZone.children.length > 1
     ) {
-        dropzone.removeChild(document.getElementById(id));
-        this.app.removeGroupBy(dragElValue);
-        dropzone.appendChild(draggableElement);
-        this.app.addGroupBy(dragElValue);
+        dropZone.removeChild(document.getElementById(id));
+        dropZone.appendChild(draggableElement);
+
+        reorderGrouping(dropZone, newGrouping)
+        this.app.updateGroupBy(newGrouping);
     }
 
-    if (!currentGroups.includes(dragElValue)) {
+    const currentGroups = dropZoneChildren.map(d => d.dimension)
+    if (!currentGroups.includes(newChild.dimension)) {
         draggableElement.classList.add("as-group");
-        dropzone.appendChild(draggableElement);
-        this.app.addGroupBy(dragElValue);
+
+        dropZone.appendChild(draggableElement);
+        reorderGrouping(dropZone, newGrouping)
+
+        this.app.updateGroupBy(newGrouping);
+
         event.dataTransfer.clearData();
     }
 
     $(".group-dump").css("display", "none");
+
+    function reorderGrouping(dropZone, childrenOrder) {
+        const children = Array.from(dropZone.children)
+
+        Array.from(dropZone.children).forEach(childName => {
+            dropZone.removeChild(childName)
+        })
+
+        childrenOrder.forEach(childName => {
+            dropZone.appendChild(children.filter(d => d.getAttribute("value") === childName)[0])
+        })
+    }
 }
 
 Interface.prototype.onDragOverDump = function (event) {

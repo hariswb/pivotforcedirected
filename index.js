@@ -66,6 +66,13 @@ App.prototype.removeGroupBy = function (value) {
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 };
 
+App.prototype.updateGroupBy = function (groupingDimensions) {
+    this.groupBy = groupingDimensions
+    this.addDocumentCounts()
+    this.pivotChart.updateChart()
+    this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
+}
+
 App.prototype.setExtras = function (k) {
     // if (this.extras.includes(k)) {
     //     this.extras = this.extras.filter((v) => v !== k);

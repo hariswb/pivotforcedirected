@@ -137,7 +137,7 @@ PivotChart.prototype.addInitTransform = function () {
 
     function setInitTransform(g) {
         const k = 0.5 / (_this.app.groupBy.length + 0.5);
-        const x = _this.height / 2
+        const x = _this.width * k
         const y = _this.height * k
 
         g.attr("transform", `translate(${x},${y}) scale(${k})`);

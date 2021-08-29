@@ -51,8 +51,8 @@ PivotChart.prototype.draw = function () {
     this.mainGraph = new MainGraph(this)
     this.treeGraph = new TreeGraph(this, this.mainGraph)
 
-
     this.addZoom()
+
 
     this.mainGraph.addTooltip()
     this.mainGraph.addLink()
@@ -71,7 +71,6 @@ PivotChart.prototype.draw = function () {
 
     this.addInitTransform()
 
-    this.documentCounts()
 
     this.treeGraph.startSimulation()
     this.mainGraph.startSimulation()
@@ -82,32 +81,11 @@ PivotChart.prototype.restartChart = function () {
     this.updateChart()
 }
 
-PivotChart.prototype.documentCounts = function () {
-    let _this = this
-
-    d3.select("#document-counts text").remove();
-    d3.select("#document-counts")
-        .append("text")
-        .text(function () {
-            const groupingSizes = _this.app.groupBy.map((g) => [
-                g,
-                new Set(_this.app.data.map((d) => d[g])).size,
-            ]);
-            const groupingText = groupingSizes
-                .map(([g, size]) => `${size} ${g}`)
-                .join(", ");
-            return groupingText;
-        });
-}
-
-
-
 PivotChart.prototype.updateChart = function () {
     this.treeGraph.updateTree()
     this.mainGraph.updateMainHulls()
     this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
-    this.documentCounts()
 }
 
 PivotChart.prototype.updateChartExtra = function () {
@@ -148,6 +126,7 @@ PivotChart.prototype.addBackground = function () {
         });
 }
 
+
 PivotChart.prototype.addInitTransform = function () {
     let _this = this
     const mainElements = d3.select("#layerMain")
@@ -159,32 +138,34 @@ PivotChart.prototype.addInitTransform = function () {
     function setInitTransform(g) {
         const k = 0.5 / (_this.app.groupBy.length + 0.5);
         const x = _this.height / 2
-        const y = _this.height / 2
+        const y = _this.height * k
 
         g.attr("transform", `translate(${x},${y}) scale(${k})`);
     }
-
 }
 
 PivotChart.prototype.addZoom = function () {
     let _this = this
+    const zoom = d3.zoom()
+        .extent([
+            [0, 0],
+            [this.width, this.height],
+        ])
+        .scaleExtent([0, 20])
+        .on("zoom", zoomed)
 
-    this.app.svg.call(
-        d3.zoom()
-            .extent([
-                [0, 0],
-                [this.width, this.height],
-            ])
-            .scaleExtent([0, 20])
-            .on("zoom", zoomed)
-    );
+    let zoomedElement = this.app.svg.call(zoom);
+
+    d3.select("#toggle-center").on('click', function () {
+        zoomedElement.transition()
+            .duration(750).call(zoom.transform, d3.zoomIdentity);
+    })
 
     function zoomed({ transform }) {
         _this.layerMain.attr(
             "transform",
             `translate(${transform.x},${transform.y}) scale(${transform.k})`
         );
-
     }
 
 }

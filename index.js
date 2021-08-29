@@ -5,13 +5,16 @@ let App = function (rawData) {
 
     this.dataRange = { start: null, end: null }
 
-    this.groupBy = ["author", "country"]; // Set default hiearchy attribute
+    this.groupBy = ["author"]; // Set default hiearchy attribute
     this.extras = [];
 
     this.darkMode = true;
 
     this.prepareData()
     this.setData()
+
+    this.setDimensionCounts()
+    this.addDocumentCounts()
 
     this.addSvg()
 
@@ -51,29 +54,29 @@ App.prototype.addSvg = function () {
 
 App.prototype.addGroupBy = function (value) {
     this.groupBy.push(value)
+    this.addDocumentCounts()
     this.pivotChart.updateChart()
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 }
 
 App.prototype.removeGroupBy = function (value) {
     this.groupBy = this.groupBy.filter((d) => d !== value);
+    this.addDocumentCounts()
     this.pivotChart.updateChart()
-
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 };
 
 App.prototype.setExtras = function (k) {
-    if (this.extras.includes(k)) {
-        this.extras = this.extras.filter((v) => v !== k);
-    } else {
-        this.extras.push(k);
-    }
-    this.pivotChart.updateChartExtra()
+    // if (this.extras.includes(k)) {
+    //     this.extras = this.extras.filter((v) => v !== k);
+    // } else {
+    //     this.extras.push(k);
+    // }
+    // this.pivotChart.updateChartExtra()
 };
 
 App.prototype.setData = function () {
     this.data = this.rawData
-
 }
 
 App.prototype.getUniquesBy = function (data, key) {
@@ -88,6 +91,8 @@ App.prototype.getUniquesBy = function (data, key) {
 
 App.prototype.prepareData = function () {
     let _this = this
+
+    this.rawData = this.getUniquesBy(this.rawData, "url")
 
     this.rawData.forEach(function (node, i) {
         _this.keys.forEach((k) => {
@@ -118,8 +123,16 @@ App.prototype.prepareData = function () {
     );
 }
 
-App.prototype.updateData = function () {
+App.prototype.updateApp = function () {
     this.data = this.filterByDate(this.rawData, this.dataRange)
+
+    this.setDimensionCounts()
+
+    this.addDocumentCounts()
+    this.interface.updateDimensions()
+
+
+    this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 
     this.pivotChart.restartChart()
 }
@@ -132,6 +145,35 @@ App.prototype.filterByDate = function (data, range) {
         let nodeDate = d.date_published.getTime()
         return start < nodeDate && nodeDate < end
     })
+}
+
+
+App.prototype.addDocumentCounts = function () {
+    let _this = this
+
+    d3.select("#document-counts text").remove();
+    d3.select("#document-counts")
+        .append("text")
+        .text(function () {
+            const groups = ["documents"].concat(_this.groupBy)
+            return groups.map(function (g) {
+                return `${_this.dimensionCounts.get(g)} ${g}`
+            })
+                .join(", ");
+        });
+}
+
+App.prototype.setDimensionCounts = function () {
+    let _this = this
+    let all = [["documents", this.data.length]]
+    const groups = this.keys.map(function (g) {
+        return [
+            g,
+            new Set(_this.data.map((d) => d[g])).size,
+        ]
+    })
+
+    this.dimensionCounts = new Map(all.concat(groups));
 }
 
 
@@ -169,7 +211,6 @@ App.prototype.setDarkMode = function () {
 d3.json("static/abt-april.json")
     .then(function (json) {
         var app = new App(json)
-
     })
     .catch(function (error) {
     });

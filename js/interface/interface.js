@@ -1,40 +1,43 @@
 let Interface = function (app) {
     this.app = app
 
-    this.setElements()
+    this.updateDimensions()
 }
 
-Interface.prototype.setElements = function () {
+
+
+Interface.prototype.updateDimensions = function () {
     let _this = this
     let groupBy = this.app.groupBy
     let keys = this.app.keys
     let extras = this.app.extras
     let elementsExtras = document.getElementById("extras")
 
+    d3.selectAll(".extra").remove()
+
     keys.forEach(function (key) {
         let extra = document.createElement("div")
-
         extra.id = `extra-${key}`
         extra.className = "draggable extra"
-        extra.innerHTML = key
+        extra.innerHTML = `${key}: ${_this.app.dimensionCounts.get(key)}`
         extra.draggable = "true"
         extra.setAttribute("value", key)
         extra.addEventListener("dragstart", function (event) {
             _this.onDragStart(event)
         })
 
-        extra.addEventListener("click", function (event) {
-            if (_this.app.extras.includes(key)) {
-                document.getElementById(`extra-${key}`).classList.remove("active");
-            } else if (!_this.app.extras.includes(key)) {
-                document.getElementById(`extra-${key}`).classList.add("active");
-            }
 
-            _this.app.setExtras(key)
-        })
+        // extra.addEventListener("click", function (event) {
+        //     if (_this.app.extras.includes(key)) {
+        //         document.getElementById(`extra-${key}`).classList.remove("active");
+        //     } else if (!_this.app.extras.includes(key)) {
+        //         document.getElementById(`extra-${key}`).classList.add("active");
+        //     }
+
+        //     _this.app.setExtras(key)
+        // })
 
         elementsExtras.appendChild(extra)
-
     });
 
     let elementGroupBy = document.getElementById("group-by")

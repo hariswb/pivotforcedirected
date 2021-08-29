@@ -303,3 +303,25 @@ input[type="checkbox"] {
   background-color: #fff;
   transform: translate(200%, 0px);
 }
+
+/* Toggle Center Position */
+
+.toggle-center{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 15px;
+}
+
+.toggle-center-button{
+  cursor: pointer;
+  display: flex;
+  border: 1px solid black;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  padding: 0;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+}

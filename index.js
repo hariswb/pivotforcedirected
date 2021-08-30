@@ -21,6 +21,7 @@ let App = function (rawData) {
     this.interface = new Interface(this)
     this.pivotChart = new PivotChart(this)
     this.barChart = new BarChart(this)
+    this.documentList = new DocumentList(this)
 
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
     this.handleDarkMode()
@@ -142,6 +143,30 @@ App.prototype.updateApp = function () {
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 
     this.pivotChart.restartChart()
+}
+
+App.prototype.updateDocList = function ({ group, grouping }) {
+    const _this = this
+    let groupBy = [...this.groupBy]
+
+    const nodeGroupIndex = groupBy.indexOf(group)
+    paramGroupBy = groupBy.slice(0, nodeGroupIndex + 1)
+    paramGrouping = grouping.slice(0, nodeGroupIndex + 1)
+
+    let filteredData = [...this.data]
+
+    let i = 0
+    recurse(groupBy)
+    function recurse(arr) {
+        if (groupBy.length > 0) {
+            let g = arr.shift()
+            filteredData = filteredData.filter((d) => d[g] === grouping[i])
+            i++
+            recurse(arr)
+        }
+    }
+
+    this.documentList.render(filteredData.map(d => d.title))
 }
 
 App.prototype.filterByDate = function (data, range) {

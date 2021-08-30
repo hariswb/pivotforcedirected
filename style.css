@@ -90,6 +90,7 @@ body:-webkit-full-screen {
   pointer-events: auto;
 }
 
+
 /* DRAG & DROP*/
 
 .extras {
@@ -126,6 +127,36 @@ body:-webkit-full-screen {
   cursor: pointer;
 }
 .rect-extra {
+}
+
+/* Document List */
+
+.document-list{
+  position: absolute;
+ width: 360px; 
+ background-color: aquamarine;
+  padding: 10px;
+}
+
+
+.document-search {
+  display: flex;
+  align-items: center;
+  height: 36px;
+}
+.document-search-input {
+  height: 36px;
+  padding: none;
+}
+.document-search-button {
+  height: 42px;
+  width: 42px;
+}
+.document-elements{
+  list-style: none;
+  padding-left: 0;
+  overflow-y: scroll;
+
 }
 
 /*Tooltip*/

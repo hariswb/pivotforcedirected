@@ -7,7 +7,7 @@
 
 <body>
   <div class="chart-container">
-    <div class="inputs">
+    <div id="interface" class="inputs">
       <h3 class="document-counts">
         <span id="document-counts"></span>
       </h3>
@@ -16,6 +16,14 @@
       <h4 class="title-extras input-title">Dimensions</h4>
       <div id="extras" class="extras"></div>
     </div>
+
+    <div id="document-list" class="document-list">
+      <div id="document-search" class="document-search">
+        <input class="document-search-input" placeholder="Search Document" type="text">
+        <button class="document-search-button"><img src="./static/search_black_24dp.svg" alt=""></button>
+      </div>
+    </div>
+
     <div class="group-dump"></div>
     <div id="chart" class="chart"></div>
     <div id="chart2" class="chart"></div>
@@ -41,6 +49,7 @@
 <script src="js/pivotchart/treeGraph.js"></script>
 <script src="js/pivotchart/mainGraph.js"></script>
 <script src="js/pivotchart/pivotchart.js"></script>
+<script src="js/documentlist/documentlist.js"></script>
 <!-- <script src="index.js"></script> -->
 <script src="index.js"></script>
 

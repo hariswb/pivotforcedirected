@@ -15,17 +15,14 @@ let TreeGraph = function (pivotChart, mainGraph) {
 
 TreeGraph.prototype.addTree = function () {
     this.treeLink = this.pivotChart.layerMain.append("g")
-        // .call(initTransform)
         .attr("id", "tree-line")
         .selectAll("line");
 
     this.treeNode = this.pivotChart.layerMain.append("g")
-        // .call(initTransform)
         .attr("id", "tree-node")
         .selectAll("circle");
 
     this.treeLabel = this.pivotChart.layerMain.append("g")
-        // .call(initTransform)
         .attr("id", "tree-label-text")
         .selectAll("foreignObject");
 
@@ -229,7 +226,11 @@ TreeGraph.prototype.renderTreeNode = function () {
         .attr("stroke", this.layout.labelCircleStroke)
         .attr("stroke-width", this.layout.labelStrokeWidth)
         .attr("opacity", (d) => (d.type === "leaf" ? 0 : 1))
-        .style("pointer-events", "none");
+        // .style("pointer-events", "none")
+        .on("click", function (event, d) {
+            _this.app.updateDocList({ group: d.group, grouping: d.grouping })
+        })
+
 }
 
 TreeGraph.prototype.renderTreeLink = function () {
@@ -299,6 +300,9 @@ TreeGraph.prototype.updateTree = function () {
     let [newtreeNodes, newtreeLinks] = this.getTreeData();
 
     this.treeNodes = newtreeNodes;
+
+
+
     this.treeLinks = newtreeLinks;
 
     this.renderTreeNode()

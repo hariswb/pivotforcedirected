@@ -134,7 +134,7 @@ body:-webkit-full-screen {
 .document-list{
   position: absolute;
  width: 360px; 
- background-color: aquamarine;
+ /* background-color: aquamarine; */
   padding: 10px;
 }
 
@@ -149,14 +149,21 @@ body:-webkit-full-screen {
   padding: none;
 }
 .document-search-button {
-  height: 42px;
-  width: 42px;
+  height: 36px;
+  width: 36px;
 }
 .document-elements{
   list-style: none;
   padding-left: 0;
   overflow-y: scroll;
-
+}
+.document-li{
+  margin:5px;
+  
+}
+.document-li h4{
+  padding: 5px;
+  margin: auto;
 }
 
 /*Tooltip*/

@@ -102,7 +102,7 @@ TreeGraph.prototype.getTreeData = function () {
 
     let labelCluster = combinations.map((combination) => {
         return {
-            grouping: hierarchy,
+            groupNames: hierarchy,
             combination: combination,
             nodes: data.filter((item) => {
                 for (let i = 0; i < hierarchy.length; i++) {
@@ -135,11 +135,11 @@ TreeGraph.prototype.getTreeData = function () {
                 let arr = [];
                 for (let i = 0; i < c.combination.length; i++) {
                     let combo = c.combination.slice(0, i + 1);
-                    let grouping = c.grouping.slice(0, combo.length);
+                    let groupNames = c.groupNames.slice(0, combo.length);
 
                     const subNodes = data.filter((item) => {
-                        for (let i = 0; i < grouping.length; i++) {
-                            if (item[grouping[i]] !== combo[i]) {
+                        for (let i = 0; i < groupNames.length; i++) {
+                            if (item[groupNames[i]] !== combo[i]) {
                                 return false;
                             }
                         }
@@ -149,7 +149,7 @@ TreeGraph.prototype.getTreeData = function () {
                     arr.push({
                         id: combo.join("-"),
                         name: combo[i],
-                        grouping: combo,
+                        groupNames: combo,
                         level: i + 1,
                         group: hierarchy[i],
                         type: "label",
@@ -159,7 +159,7 @@ TreeGraph.prototype.getTreeData = function () {
                         arr.push({
                             id: combo.join("-") + "-leaf",
                             name: combo.join("-") + "-leaf",
-                            grouping: combo.concat("leaf"),
+                            groupNames: combo.concat("leaf"),
                             level: i + 1,
                             group: hierarchy[i],
                             type: "leaf",
@@ -185,7 +185,7 @@ TreeGraph.prototype.getTreeData = function () {
     ).concat({
         id: "fakeRoot",
         name: "fakeRoot",
-        grouping: ["fakeRoot"],
+        groupNames: ["fakeRoot"],
         level: 0,
         group: "fakeRoot",
         type: "root",
@@ -223,12 +223,13 @@ TreeGraph.prototype.renderTreeNode = function () {
         .attr("fill", function (d) {
             return _this.pivotChart.brighten(_this.treeColors(d.group))
         })
+        .style("cursor", "pointer")
         .attr("stroke", this.layout.labelCircleStroke)
         .attr("stroke-width", this.layout.labelStrokeWidth)
         .attr("opacity", (d) => (d.type === "leaf" ? 0 : 1))
         // .style("pointer-events", "none")
         .on("click", function (event, d) {
-            _this.app.updateDocList({ group: d.group, grouping: d.grouping })
+            _this.app.updateDocumentList({ group: d.group, groupNames: d.groupNames })
         })
 
 }

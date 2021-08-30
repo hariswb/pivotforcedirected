@@ -18,10 +18,12 @@ let App = function (rawData) {
 
     this.addSvg()
 
+
     this.interface = new Interface(this)
     this.pivotChart = new PivotChart(this)
     this.barChart = new BarChart(this)
     this.documentList = new DocumentList(this)
+
 
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
     this.handleDarkMode()
@@ -52,6 +54,7 @@ App.prototype.addSvg = function () {
         .style("height", 230)
         .style("background-color", "none");
 }
+
 
 App.prototype.addGroupBy = function (value) {
     this.groupBy.push(value)
@@ -139,34 +142,39 @@ App.prototype.updateApp = function () {
     this.addDocumentCounts()
     this.interface.updateDimensions()
 
-
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 
     this.pivotChart.restartChart()
 }
 
-App.prototype.updateDocList = function ({ group, grouping }) {
+App.prototype.updateDocumentList = function ({ group, groupNames }) {
     const _this = this
     let groupBy = [...this.groupBy]
 
     const nodeGroupIndex = groupBy.indexOf(group)
-    paramGroupBy = groupBy.slice(0, nodeGroupIndex + 1)
-    paramGrouping = grouping.slice(0, nodeGroupIndex + 1)
+    newGroupBy = groupBy.slice(0, nodeGroupIndex + 1)
+    newGroupNames = groupNames.slice(0, nodeGroupIndex + 1)
 
     let filteredData = [...this.data]
 
     let i = 0
-    recurse(groupBy)
+    recurse(newGroupBy)
     function recurse(arr) {
-        if (groupBy.length > 0) {
+        if (newGroupBy.length > 0) {
             let g = arr.shift()
-            filteredData = filteredData.filter((d) => d[g] === grouping[i])
+            filteredData = filteredData.filter((d) => d[g] === newGroupNames[i])
             i++
             recurse(arr)
         }
     }
 
-    this.documentList.render(filteredData.map(d => d.title))
+    const payload = {
+        groupBy: groupBy.slice(0, nodeGroupIndex + 1),
+        groupNames: newGroupNames,
+        data: filteredData.map(d => d.title),
+        displayState: "block"
+    }
+    this.documentList.render(payload)
 }
 
 App.prototype.filterByDate = function (data, range) {

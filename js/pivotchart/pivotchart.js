@@ -45,14 +45,12 @@ PivotChart.prototype.updateDarkMode = function () {
 
 PivotChart.prototype.draw = function () {
     this.layerMainBg = this.app.svg.append("g").attr("id", "layerMainBg");
-    this.layerMainTransform = this.app.svg.append("g").attr("id", "initialTransform")
-    this.layerMain = this.layerMainTransform.append("g").attr("id", "layerMain");
+    this.layerMain = this.app.svg.append("g").attr("id", "layerMain");
 
     this.mainGraph = new MainGraph(this)
     this.treeGraph = new TreeGraph(this, this.mainGraph)
 
     this.addZoom()
-
 
     this.mainGraph.addTooltip()
     this.mainGraph.addLink()
@@ -122,6 +120,7 @@ PivotChart.prototype.addBackground = function () {
         .attr("height", this.height)
         .attr("fill", this.layout.bgColor)
         .on("click", function () {
+            _this.app.documentList.render({ data: [], displayState: "none" })
             return _this.mainGraph.clearColoring()
         });
 }

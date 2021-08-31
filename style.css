@@ -133,37 +133,55 @@ body:-webkit-full-screen {
 
 .document-list{
   position: absolute;
- width: 360px; 
- /* background-color: aquamarine; */
+  width: 360px; 
   padding: 10px;
+  border: 1px dashed black;
+  border-radius: 5px;
 }
-
-
 .document-search {
-  display: flex;
   align-items: center;
-  height: 36px;
+  height: 30px;
 }
 .document-search-input {
-  height: 36px;
+  height: 100%;
+  width: 100%;
   padding: none;
+  border: 0.5px solid grey;
+  border-radius: 2.5px;
+  background: url(./static/search_black_24dp.svg) no-repeat right;
+  background-color: #fff;
 }
-.document-search-button {
-  height: 36px;
+
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance:none;
+}
+
+.document-search-icon {
+  position: relative;
+  height: 100%;
   width: 36px;
 }
+
 .document-elements{
   list-style: none;
   padding-left: 0;
-  overflow-y: scroll;
+  margin: 10px 0 5px 0;
+  overflow-y: auto;
 }
 .document-li{
-  margin:5px;
-  
+  margin-bottom:5px;
+  opacity: 0.8;
 }
 .document-li h4{
   padding: 5px;
   margin: auto;
+}
+.document-li h4 a{
+  color:#222;
+  text-decoration: none;
 }
 
 /*Tooltip*/
@@ -354,7 +372,7 @@ input[type="checkbox"] {
 .toggle-center-button{
   cursor: pointer;
   display: flex;
-  border: 1px solid black;
+  border: 0px solid black;
   width: 40px;
   height: 40px;
   border-radius: 20px;

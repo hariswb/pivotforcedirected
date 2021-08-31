@@ -229,9 +229,20 @@ TreeGraph.prototype.renderTreeNode = function () {
         .attr("opacity", (d) => (d.type === "leaf" ? 0 : 1))
         // .style("pointer-events", "none")
         .on("click", function (event, d) {
+            _this.handleClick(d)
             _this.app.updateDocumentList({ group: d.group, groupNames: d.groupNames })
         })
+}
 
+TreeGraph.prototype.handleClick = function (node) {
+    const _this = this
+    this.treeNode.attr("stroke-width", function (d) {
+        return d.id === node.id ? _this.layout.labelStrokeWidthHighlighted : _this.layout.labelStrokeWidth
+    })
+}
+
+TreeGraph.prototype.clearColoring = function () {
+    this.treeNode.attr("stroke-width", this.layout.labelStrokeWidth)
 }
 
 TreeGraph.prototype.renderTreeLink = function () {

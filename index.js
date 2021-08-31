@@ -24,7 +24,6 @@ let App = function (rawData) {
     this.barChart = new BarChart(this)
     this.documentList = new DocumentList(this)
 
-
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
     this.handleDarkMode()
 }
@@ -169,9 +168,7 @@ App.prototype.updateDocumentList = function ({ group, groupNames }) {
     }
 
     const payload = {
-        groupBy: groupBy.slice(0, nodeGroupIndex + 1),
-        groupNames: newGroupNames,
-        data: filteredData.map(d => d.title),
+        data: filteredData.map(d => ({ url: d.url, title: d.title })),
         displayState: "block"
     }
     this.documentList.render(payload)
@@ -245,6 +242,7 @@ App.prototype.handleDarkMode = function () {
 App.prototype.setDarkMode = function () {
     this.pivotChart.updateDarkMode()
     this.barChart.updateDarkMode()
+    this.documentList.updateDarkMode()
 }
 
 

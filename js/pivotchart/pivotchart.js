@@ -41,6 +41,7 @@ PivotChart.prototype.updateDarkMode = function () {
     d3.selectAll(".input-title").style("color", this.layout.textColor);
     d3.select(".group-by").style("background-color", this.layout.inputBg);
     d3.selectAll(".extra-text").style("color", this.layout.extraFontColor);
+    d3.select("#toggle-center-button").style("background-color", this.layout.toggleCenter)
 }
 
 PivotChart.prototype.draw = function () {
@@ -121,7 +122,9 @@ PivotChart.prototype.addBackground = function () {
         .attr("fill", this.layout.bgColor)
         .on("click", function () {
             _this.app.documentList.render({ data: [], displayState: "none" })
-            return _this.mainGraph.clearColoring()
+
+            _this.mainGraph.clearColoring()
+            _this.treeGraph.clearColoring()
         });
 }
 
@@ -155,7 +158,7 @@ PivotChart.prototype.addZoom = function () {
 
     let zoomedElement = this.app.svg.call(zoom);
 
-    d3.select("#toggle-center").on('click', function () {
+    d3.select("#toggle-center-button").on('click', function () {
         zoomedElement.transition()
             .duration(750).call(zoom.transform, d3.zoomIdentity);
     })
@@ -215,6 +218,8 @@ PivotChart.prototype.setLayout = function () {
         labelCircleFill: "#eee",
         labelCircleStroke: "#eee",
         labelStrokeWidth: 2,
+        labelStrokeWidthHighlighted: 4,
         labelLineStroke: "#333",
+        toggleCenter: function () { return _this.app.darkMode ? "#ddd" : "#ddd" },
     };
 }

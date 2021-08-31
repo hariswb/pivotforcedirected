@@ -19,27 +19,14 @@ DocumentList.prototype.setPosition = function (params) {
     this.list
         .style("top", `${interface.bottom + 20}px`)
         .style("left", "50px")
+        .style("border-color", this.layout.bgBorderColor)
     this.ul
-        .style("height", `${window.innerHeight - interface.bottom - 150}px`)
+        .style("max-height", `${window.innerHeight / 2 - 150}px`)
 }
 
-DocumentList.prototype.render = function ({ groupBy, groupNames, data, displayState }) {
-
+DocumentList.prototype.render = function ({ data, displayState }) {
     const _this = this
     const searchInput = d3.select("#document-search-input")
-
-    if (displayState === "block") {
-        const bindGroup = groupBy.map((d, i) => [d, groupNames[i]])
-        const textBindGroup = bindGroup.map(([g, gName]) => `${g}: ${gName}`)
-        console.log(bindGroup, textBindGroup)
-
-        d3.select("#doc-list-p").remove()
-        d3.select("#doc-list-details")
-            .style("background-color", _this.layout.liBgColor())
-            .append("p")
-            .attr("id", "doc-list-p")
-            .text(textBindGroup)
-    }
 
     this.list.style("display", displayState)
 
@@ -70,17 +57,23 @@ DocumentList.prototype.render = function ({ groupBy, groupNames, data, displaySt
         });
     })
 
-    function elementHtml(title) {
+    function elementHtml({ title, url }) {
         return `
-                <h4>${title}</h4>
+                <h4><a href=${url} target="_blank">${title}</a></h4>
             `
     }
+}
+
+DocumentList.prototype.updateDarkMode = function () {
+    d3.selectAll(".document-li").style("background-color", this.layout.liBgColor)
+    this.list.style("border-color", this.layout.bgBorderColor)
 }
 
 DocumentList.prototype.setLayout = function () {
     let _this = this
     this.layout = {
-        liBgColor: function () { return _this.app.darkMode ? "#eee" : "#eee" }
+        liBgColor: function () { return _this.app.darkMode ? "#fff" : "#eee" },
+        bgBorderColor: function () { return _this.app.darkMode ? "#444" : "#111" }
     }
 }
 

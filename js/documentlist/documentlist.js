@@ -19,7 +19,6 @@ DocumentList.prototype.setPosition = function (params) {
     this.list
         .style("top", `${interface.bottom + 20}px`)
         .style("left", "50px")
-        .style("border-color", this.layout.bgBorderColor)
     this.ul
         .style("max-height", `${window.innerHeight / 2 - 150}px`)
 }
@@ -44,36 +43,38 @@ DocumentList.prototype.render = function ({ data, displayState }) {
             update => update
         )
 
-    searchInput.on("keyup", function (e) {
-        const rgx = `${searchInput.node().value}`
-        const pattern = new RegExp(rgx, "i")
-        const list = d3.selectAll(".document-li")
-        list.nodes().forEach(element => {
-            if (pattern.test(element.innerText)) {
-                d3.select(`#${element.id}`).style("display", "block")
-            } else {
-                d3.select(`#${element.id}`).style("display", "none")
-            }
-        });
-    })
+    searchInput
+        .style("background-color", this.layout.searchColor)
+        .on("keyup", function (e) {
+            const rgx = `${searchInput.node().value}`
+            const pattern = new RegExp(rgx, "i")
+            const list = d3.selectAll(".document-li")
+            list.nodes().forEach(element => {
+                if (pattern.test(element.innerText)) {
+                    d3.select(`#${element.id}`).style("display", "block")
+                } else {
+                    d3.select(`#${element.id}`).style("display", "none")
+                }
+            });
+        })
 
     function elementHtml({ title, url }) {
         return `
-                <h4><a href=${url} target="_blank">${title}</a></h4>
+               <a href=${url} target="_blank"><p>${title}</p></a>
             `
     }
 }
 
 DocumentList.prototype.updateDarkMode = function () {
     d3.selectAll(".document-li").style("background-color", this.layout.liBgColor)
-    this.list.style("border-color", this.layout.bgBorderColor)
+    d3.select("#document-search-input").style("background-color", this.layout.searchColor)
 }
 
 DocumentList.prototype.setLayout = function () {
     let _this = this
     this.layout = {
         liBgColor: function () { return _this.app.darkMode ? "#fff" : "#eee" },
-        bgBorderColor: function () { return _this.app.darkMode ? "#444" : "#111" }
+        searchColor: function () { return _this.app.darkMode ? "#fff" : "#ddd" },
     }
 }
 

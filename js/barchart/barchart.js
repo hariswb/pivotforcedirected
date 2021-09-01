@@ -325,5 +325,4 @@ BarChart.prototype.setLayout = function () {
     bgColor: function () { return _this.app.darkMode ? "#222" : "#fff" },
     textColor: function () { return _this.app.darkMode ? "#fff" : "#111" },
   };
-
 }

@@ -404,13 +404,13 @@ align-items: center;
 .root-label{
   color: "#222";
   padding: 0px;
-  background-color: white;
+  /* background-color: white; */
   display: flex;
   flex-direction: row;
   justify-content:center;
   align-items:center;
   padding: 5px;
-  border-radius: 5px;
+  /* border-radius: 5px; */
 }
 
 .root-label p{

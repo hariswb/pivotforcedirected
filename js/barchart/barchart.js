@@ -14,7 +14,8 @@ BarChart.prototype.addBg = function () {
     .attr("y", 0)
     .attr("width", this.layout.width)
     .attr("height", this.layout.height)
-    .attr("fill", this.layout.bgColor);
+    .attr("fill", this.layout.bgColor)
+    .attr("opacity", 0.2)
 }
 
 BarChart.prototype.addBars = function () {
@@ -101,11 +102,13 @@ BarChart.prototype.addChartTitle = function () {
     .attr("y", 0)
     .style("font-size", 16)
     .append("xhtml:div")
+    .style("text-align", "center")
     .attr("class", "bar-chart-title")
     .append("span")
+    .style('width', "100%")
     .attr("class", "bar-chart-title-span")
     .style("color", this.layout.textColor)
-    .html("Daily Document Volume");
+    .html("Document Volume")
 }
 
 
@@ -263,7 +266,7 @@ BarChart.prototype.addXAxis = function () {
 
 
 BarChart.prototype.addY1Axis = function () {
-  this.y1Axis = d3.axisLeft(this.y1);
+  this.y1Axis = d3.axisLeft(this.y1).ticks(4);
   this.layerBarChart
     .append("g")
     .attr("id", "y1Axis")

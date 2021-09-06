@@ -26,9 +26,9 @@ TreeGraph.prototype.addTree = function () {
         .attr("id", "tree-label-text")
         .selectAll("foreignObject");
 
-    this.rootLabel = this.pivotChart.layerMain.append("g")
-        .attr("id", "root-label")
-        .selectAll("foreignObject");
+    // this.rootLabel = this.pivotChart.layerMain.append("g")
+    //     .attr("id", "root-label")
+    //     .selectAll("foreignObject");
 }
 
 TreeGraph.prototype.addSimulation = function () {
@@ -81,13 +81,13 @@ TreeGraph.prototype.startSimulation = function () {
                 return d.y - _this.baseTriangle(d.r)
             });
 
-        _this.rootLabel
-            .attr("x", function (d) {
-                return d.x - _this.baseTriangle(d.r) * 2
-            })
-            .attr("y", function (d) {
-                return d.y - _this.baseTriangle(d.r) * 2
-            })
+        // _this.rootLabel
+        //     .attr("x", function (d) {
+        //         return d.x - _this.baseTriangle(d.r) * 2
+        //     })
+        //     .attr("y", function (d) {
+        //         return d.y - _this.baseTriangle(d.r) * 2
+        //     })
 
         function getFociTree(groupBy, node) {
             return _this.pivotChart.clusterMap.get(groupBy.map((k) => node[k]).join("-") + "-leaf");
@@ -195,11 +195,11 @@ TreeGraph.prototype.getTreeData = function () {
             .flat()
     ).concat({
         id: "fakeRoot",
-        name: "fakeRoot",
+        name: [...new Set(this.app.data.map(d => d.search_query))][0],
         groupNames: ["fakeRoot"],
         level: 0,
         group: "fakeRoot",
-        type: "root",
+        type: "label",
         r: layout.treeRootRadius,
     });
 
@@ -301,38 +301,36 @@ TreeGraph.prototype.renderTreeLabel = function () {
         });
 }
 
-TreeGraph.prototype.renderRootLabel = function () {
-    const _this = this
+// TreeGraph.prototype.renderRootLabel = function () {
+//     const _this = this
 
-    d3.select(".fakeRoot").style("display", "none")
+//     this.rootLabel = this.rootLabel
+//         .data(this.treeNodes.filter((d) => d.type === "root"))
+//         .join("foreignObject")
+//         .attr("class", 'root-foreignobject')
+//         .attr("width", function (d) {
+//             return _this.baseTriangle(d.r) * 4
+//         })
+//         .attr("height", function (d) {
+//             return _this.baseTriangle(d.r) * 4
+//         })
+//         .style("font-size", (d) => {
+//             const multiplier = Math.floor(d.name.length / 18) + 1;
+//             return `${d.r / (3.5 * multiplier)}px`;
+//         })
+//         .style("color", "white")
 
-    this.rootLabel = this.rootLabel
-        .data(this.treeNodes.filter((d) => d.type === "root"))
-        .join("foreignObject")
-        .attr("class", 'root-foreignobject')
-        .attr("width", function (d) {
-            return _this.baseTriangle(d.r) * 4
-        })
-        .attr("height", function (d) {
-            return _this.baseTriangle(d.r) * 4
-        })
-        .style("font-size", (d) => {
-            const multiplier = Math.floor(d.name.length / 18) + 1;
-            return `${d.r / (2.5 * multiplier)}px`;
-        });
+//     const searchQuery = [...new Set(this.app.data.map(d => d.search_query))][0]
 
-    this.rootLabelDiv = this.rootLabel
-        .append("xhtml:div")
-        .attr("class", "root-label-container")
-        .append("div")
-        .attr("class", "root-label")
-        .html((d) => (`
-            <p>Search Query</p>
-            <img src="./static/search_black_24dp.svg"></img>
-        `))
-
-
-}
+//     this.rootLabelDiv = this.rootLabel
+//         .append("xhtml:div")
+//         .attr("class", "root-label-container")
+//         .append("div")
+//         .attr("class", "root-label")
+//         .html((d) => (`
+//             <p>${searchQuery}</p>
+//         `))
+// }
 
 TreeGraph.prototype.updateTree = function () {
     let _this = this
@@ -369,7 +367,7 @@ TreeGraph.prototype.updateTree = function () {
 
     this.renderTreeLabel()
 
-    this.renderRootLabel()
+    // this.renderRootLabel()
 
     d3.selectAll(".mainlabeldiv").remove();
 

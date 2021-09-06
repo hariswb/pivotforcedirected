@@ -213,7 +213,7 @@ PivotChart.prototype.setLayout = function () {
         lineopacity: 0.4,
         lineopacityHighlight: 1,
         treeLabelRadius: 24,
-        treeRootRadius: 24,
+        treeRootRadius: 36,
         labelRadius: 16,
         labelCircleFill: "#eee",
         labelCircleStroke: "#eee",

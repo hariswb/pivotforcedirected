@@ -37,9 +37,10 @@ App.prototype.addSvg = function () {
         .style("z-index", "-1")
         .style("top", 0)
         .style("left", 0)
-        .style("width", "100%")
-        .style("height", "100%")
+        .attr("width", "100%")
+        .attr("height", "100%")
         .style("background-color", "white");
+
 
     this.svg2 = d3
         .select("#chart2")
@@ -49,8 +50,8 @@ App.prototype.addSvg = function () {
         .style("z-index", "-1")
         .style("top", 0)
         .style("left", 0)
-        .style("width", 500)
-        .style("height", 230)
+        .attr("width", 500)
+        .attr("height", 230)
         .style("background-color", "none");
 }
 
@@ -99,10 +100,21 @@ App.prototype.getUniquesBy = function (data, key) {
     return result
 }
 
+App.prototype.getLastThirtyDays = function (rawData, days) {
+    const nowSec = (new Date()).getTime()
+    const thirtyDaysInSec = 1000 * 60 * 60 * 24 * days
+    const threshold = nowSec - thirtyDaysInSec
+
+    const filteredData = rawData.filter(d => {
+        const t = d.date_published.getTime()
+        return t > threshold
+    })
+
+    return filteredData
+}
+
 App.prototype.prepareData = function () {
     let _this = this
-
-    this.rawData = this.getUniquesBy(this.rawData, "url")
 
     this.rawData.forEach(function (node, i) {
         _this.keys.forEach((k) => {
@@ -118,6 +130,9 @@ App.prototype.prepareData = function () {
         _this.rawData[i].date_published = date;
         _this.rawData[i].date_string = date.toDateString();
     });
+
+    this.rawData = this.getUniquesBy(this.rawData, "url")
+    this.rawData = this.getLastThirtyDays(this.rawData, 6 * 30)
 
     this.dataRolled = d3.rollup(
         this.rawData,

@@ -5,7 +5,7 @@ let App = function (rawData) {
 
     this.dataRange = { start: null, end: null }
 
-    this.groupBy = ["author"]; // Set default hiearchy attribute
+    this.groupBy = ["site_type", "sentiment"]; // Set default hiearchy attribute
     this.extras = [];
 
     this.darkMode = true;
@@ -132,7 +132,7 @@ App.prototype.prepareData = function () {
     });
 
     this.rawData = this.getUniquesBy(this.rawData, "url")
-    this.rawData = this.getLastThirtyDays(this.rawData, 6 * 30)
+    // this.rawData = this.getLastThirtyDays(this.rawData, 6 * 30)
 
     this.dataRolled = d3.rollup(
         this.rawData,

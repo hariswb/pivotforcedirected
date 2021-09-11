@@ -5,7 +5,7 @@ let App = function (rawData) {
 
     this.dataRange = { start: null, end: null }
 
-    this.groupBy = ["site_type", "sentiment"]; // Set default hiearchy attribute
+    this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
     this.extras = [];
 
     this.darkMode = true;
@@ -261,8 +261,9 @@ App.prototype.setDarkMode = function () {
 }
 
 
-d3.json("static/abt-april.json")
+d3.json("static/test.json")
     .then(function (json) {
+        console.log(json)
         var app = new App(json)
     })
     .catch(function (error) {

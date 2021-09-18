@@ -123,6 +123,10 @@ App.prototype.prepareData = function () {
             } else if (node[k] === undefined) {
                 _this.rawData[i][k] = "null";
             }
+
+            const value = _this.rawData[i][k]
+            _this.rawData[i][k] = typeof value === "number" ? value.toString() : value
+
             _this.rawData[i]["type"] = "main";
         });
 
@@ -131,8 +135,9 @@ App.prototype.prepareData = function () {
         _this.rawData[i].date_string = date.toDateString();
     });
 
+
     this.rawData = this.getUniquesBy(this.rawData, "url")
-    // this.rawData = this.getLastThirtyDays(this.rawData, 6 * 30)
+    // this.rawData = this.getLastThirtyDays(this.rawData, 30)
 
     this.dataRolled = d3.rollup(
         this.rawData,
@@ -263,8 +268,8 @@ App.prototype.setDarkMode = function () {
 
 d3.json("static/test.json")
     .then(function (json) {
-        console.log(json)
         var app = new App(json)
+        console.log(json)
     })
     .catch(function (error) {
     });

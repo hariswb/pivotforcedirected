@@ -242,6 +242,19 @@ TreeGraph.prototype.renderTreeNode = function () {
             _this.handleClick(d)
             _this.app.updateDocumentList({ group: d.group, groupNames: d.groupNames })
         })
+        .call(
+            d3.drag()
+                .on("start", (event, d) => {
+                    _this.simulation.alpha(0.5).restart()
+                })
+                .on("drag", function (event, d) {
+                    console.log(d, event)
+                    d.x = event.x
+                    d.y = event.y
+                })
+                .on("end", function (event, d) {
+                })
+        )
 
     this.treeNode.append("title").text(function (d) {
         return d.name;
@@ -396,7 +409,9 @@ TreeGraph.prototype.updateTree = function () {
 
     this.simulation.nodes(this.treeNodes);
 
-    // treeSimulation.alphaDecay(0.005).velocityDecay(0.6);
     this.simulation.alpha(1).restart();
+    this.simulation.alphaDecay(0.005).velocityDecay(0.9);
+
+    // this.simulation.alphaDecay(0)//.velocityDecay(0.6);
 }
 

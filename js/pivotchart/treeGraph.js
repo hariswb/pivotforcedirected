@@ -248,7 +248,6 @@ TreeGraph.prototype.renderTreeNode = function () {
                     _this.simulation.alpha(0.5).restart()
                 })
                 .on("drag", function (event, d) {
-                    console.log(d, event)
                     d.x = event.x
                     d.y = event.y
                 })

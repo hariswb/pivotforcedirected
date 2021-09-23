@@ -18,7 +18,6 @@ let App = function (rawData) {
 
     this.addSvg()
 
-
     this.interface = new Interface(this)
     this.pivotChart = new PivotChart(this)
     this.barChart = new BarChart(this)
@@ -41,7 +40,6 @@ App.prototype.addSvg = function () {
         .attr("height", "100%")
         .style("background-color", "white");
 
-
     this.svg2 = d3
         .select("#chart2")
         .append("svg")
@@ -54,7 +52,6 @@ App.prototype.addSvg = function () {
         .attr("height", 230)
         .style("background-color", "none");
 }
-
 
 App.prototype.addGroupBy = function (value) {
     this.groupBy.push(value)
@@ -138,19 +135,6 @@ App.prototype.prepareData = function () {
 
     this.rawData = this.getUniquesBy(this.rawData, "url")
     // this.rawData = this.getLastThirtyDays(this.rawData, 30)
-
-    this.dataRolled = d3.rollup(
-        this.rawData,
-        (v) => {
-            const random_num = 1 + Math.random() * 2;
-            return {
-                length: v.length,
-                closing_price: random_num.toFixed(2),
-                bundle: v,
-            };
-        },
-        (d) => new Date(d.date_string)
-    );
 }
 
 App.prototype.updateApp = function () {
@@ -191,6 +175,7 @@ App.prototype.updateDocumentList = function ({ group, groupNames }) {
         data: filteredData.map(d => ({ url: d.url, title: d.title })),
         displayState: "block"
     }
+
     this.documentList.render(payload)
 }
 
@@ -269,7 +254,7 @@ App.prototype.setDarkMode = function () {
 d3.json("static/test.json")
     .then(function (json) {
         var app = new App(json)
-        console.log(json)
+        // console.log(json)
     })
     .catch(function (error) {
     });

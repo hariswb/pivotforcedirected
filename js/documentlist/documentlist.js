@@ -30,7 +30,7 @@ DocumentList.prototype.render = function ({ data, displayState }) {
     this.list.style("display", displayState)
 
     this.ul.selectAll("li")
-        .data(data, d => d)
+        .data(data, d => d.title)
         .join(
             (enter) => enter.append("li")
                 .attr("id", (d, i) => `document-li-${i}`)
@@ -40,7 +40,8 @@ DocumentList.prototype.render = function ({ data, displayState }) {
                 })
                 .html(d => elementHtml(d))
             ,
-            update => update
+            update => update,
+            exit => exit.remove()
         )
 
     searchInput
@@ -59,9 +60,7 @@ DocumentList.prototype.render = function ({ data, displayState }) {
         })
 
     function elementHtml({ title, url }) {
-        return `
-               <a href=${url} target="_blank"><p>${title}</p></a>
-            `
+        return `<a href=${url} target="_blank"><p>${title}</p></a>`
     }
 }
 

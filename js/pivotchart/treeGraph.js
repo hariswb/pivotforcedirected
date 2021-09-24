@@ -372,11 +372,11 @@ TreeGraph.prototype.updateTree = function () {
                 .forceLink(treeLinks)
                 .id((d) => d.id)
                 .distance((d) => d.distance)
-                .strength(2)
+                .strength(2.3)
         )
         .force(
             "tree-charge",
-            d3.forceManyBody().strength((d) => -100 * d.r)
+            d3.forceManyBody().strength((d) => -80 * d.r)
         )
         .force("x", d3.forceX(height / 2))
         .force("y", d3.forceY(height / 2));

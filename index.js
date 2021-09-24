@@ -6,6 +6,7 @@ let App = function (rawData) {
     this.dataRange = { start: null, end: null }
 
     this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
+
     this.extras = [];
 
     this.darkMode = true;
@@ -51,13 +52,6 @@ App.prototype.addSvg = function () {
         .attr("width", 500)
         .attr("height", 230)
         .style("background-color", "none");
-}
-
-App.prototype.addGroupBy = function (value) {
-    this.groupBy.push(value)
-    this.addDocumentCounts()
-    this.pivotChart.updateChart()
-    this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 }
 
 App.prototype.removeGroupBy = function (value) {

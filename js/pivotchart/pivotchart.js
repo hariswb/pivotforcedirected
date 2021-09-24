@@ -67,9 +67,7 @@ PivotChart.prototype.draw = function () {
     this.treeGraph.updateTree()
     this.mainGraph.updateMainHulls()
 
-
-    this.addInitTransform()
-
+    this.addTransform()
 
     this.treeGraph.startSimulation()
     this.mainGraph.startSimulation()
@@ -85,6 +83,8 @@ PivotChart.prototype.updateChart = function () {
     this.mainGraph.updateMainHulls()
     this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
+
+    this.addTransform()
 }
 
 PivotChart.prototype.updateChartExtra = function () {
@@ -129,18 +129,38 @@ PivotChart.prototype.addBackground = function () {
 }
 
 
-PivotChart.prototype.addInitTransform = function () {
+PivotChart.prototype.addTransform = function () {
     let _this = this
     const mainElements = d3.select("#layerMain")
         .selectChildren().nodes().map(d => `#${d.id}`)
-    for (let el of mainElements) {
-        d3.select(el).call(setInitTransform)
+
+    const t = 200
+
+    this.zoomedElement.transition()
+        .duration(750).call(_this.zoom.transform, d3.zoomIdentity);
+
+    setTimeout(
+        function listenTreePositions(params) {
+            if (_this.treeGraph.treePositions.show === false) {
+                setTimeout(listenTreePositions, t)
+            } else {
+                init()
+            }
+        }, t)
+
+    function init() {
+        for (let el of mainElements) {
+            d3.select(el).transition()
+                .duration(750).call(setTransform)
+        }
     }
 
-    function setInitTransform(g) {
-        const k = 0.5 / (_this.app.groupBy.length + 0.5);
-        const x = _this.width * k * 1.5
-        const y = _this.height * k
+    function setTransform(g) {
+        const controlboxHeight = document.getElementById("interface").getBoundingClientRect().height
+
+        const k = (_this.height) / (2 * _this.treeGraph.treePositions.radius)
+        const x = _this.width / 2 - _this.treeGraph.treePositions.rootX
+        const y = _this.height / 2 - _this.treeGraph.treePositions.rootY
 
         g.attr("transform", `translate(${x},${y}) scale(${k})`);
     }
@@ -148,7 +168,7 @@ PivotChart.prototype.addInitTransform = function () {
 
 PivotChart.prototype.addZoom = function () {
     let _this = this
-    const zoom = d3.zoom()
+    this.zoom = d3.zoom()
         .extent([
             [0, 0],
             [this.width, this.height],
@@ -156,11 +176,11 @@ PivotChart.prototype.addZoom = function () {
         .scaleExtent([0, 20])
         .on("zoom", zoomed)
 
-    let zoomedElement = this.app.svg.call(zoom);
+    this.zoomedElement = this.app.svg.call(this.zoom);
 
     d3.select("#toggle-center-button").on('click', function () {
-        zoomedElement.transition()
-            .duration(750).call(zoom.transform, d3.zoomIdentity);
+        _this.zoomedElement.transition()
+            .duration(750).call(_this.zoom.transform, d3.zoomIdentity);
     })
 
     function zoomed({ transform }) {
@@ -169,7 +189,6 @@ PivotChart.prototype.addZoom = function () {
             `translate(${transform.x},${transform.y}) scale(${transform.k})`
         );
     }
-
 }
 
 

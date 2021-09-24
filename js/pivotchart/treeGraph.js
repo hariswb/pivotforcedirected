@@ -8,6 +8,13 @@ let TreeGraph = function (pivotChart, mainGraph) {
     this.groupBy = pivotChart.app.groupBy
     this.clusterMap = pivotChart.clusterMap
 
+    this.treePositions = {
+        show: false,
+        rootX: 0,
+        rootY: 0,
+        radius: 0,
+    }
+
     this.treeColors = d3.scaleOrdinal().range(d3.schemeCategory10);
     this.treeLinks = [];
     this.treeNodes = [];
@@ -25,10 +32,6 @@ TreeGraph.prototype.addTree = function () {
     this.treeLabel = this.pivotChart.layerMain.append("g")
         .attr("id", "tree-label-text")
         .selectAll("foreignObject");
-
-    // this.rootLabel = this.pivotChart.layerMain.append("g")
-    //     .attr("id", "root-label")
-    //     .selectAll("foreignObject");
 }
 
 TreeGraph.prototype.addSimulation = function () {
@@ -38,9 +41,28 @@ TreeGraph.prototype.addSimulation = function () {
 
 TreeGraph.prototype.startSimulation = function () {
     let _this = this
+
     this.simulation.on("tick", treeTick);
 
     function treeTick(e) {
+        const leaves = []
+        if (_this.simulation.alpha() < 0.5 && _this.treePositions.show === false) {
+            _this.treeNode
+                .attr("x", (d) => {
+                    if (d.group === "fakeRoot") {
+                        _this.treePositions.rootX = d.x
+                        _this.treePositions.rootY = d.y
+                    } else {
+                        leaves.push([d.x, d.y])
+                    }
+                })
+            _this.treePositions.show = true
+            const largestRadius = d3.max(leaves
+                .map(([x, y]) => Math.sqrt((x - _this.treePositions.rootX) ** 2 + (y - _this.treePositions.rootY) ** 2))
+            )
+            _this.treePositions.radius = largestRadius
+        }
+
         let groupBy = _this.groupBy
 
         _this.mainGraph.simulation
@@ -80,14 +102,6 @@ TreeGraph.prototype.startSimulation = function () {
             .attr("y", function (d) {
                 return d.y - _this.baseTriangle(d.r)
             });
-
-        // _this.rootLabel
-        //     .attr("x", function (d) {
-        //         return d.x - _this.baseTriangle(d.r) * 2
-        //     })
-        //     .attr("y", function (d) {
-        //         return d.y - _this.baseTriangle(d.r) * 2
-        //     })
 
         function getFociTree(groupBy, node) {
             return _this.pivotChart.clusterMap.get(groupBy.map((k) => node[k]).join("-") + "-leaf");
@@ -349,6 +363,8 @@ TreeGraph.prototype.updateTree = function () {
     let treeLinks = this.treeLinks
     let height = this.pivotChart.height
 
+    this.treePositions.show = false
+
     this.simulation
         .force(
             "treeLink",
@@ -356,11 +372,11 @@ TreeGraph.prototype.updateTree = function () {
                 .forceLink(treeLinks)
                 .id((d) => d.id)
                 .distance((d) => d.distance)
-                .strength(1)
+                .strength(2)
         )
         .force(
             "tree-charge",
-            d3.forceManyBody().strength((d) => -90 * d.r)
+            d3.forceManyBody().strength((d) => -100 * d.r)
         )
         .force("x", d3.forceX(height / 2))
         .force("y", d3.forceY(height / 2));

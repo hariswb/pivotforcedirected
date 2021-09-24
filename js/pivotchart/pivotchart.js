@@ -156,11 +156,14 @@ PivotChart.prototype.addTransform = function () {
     }
 
     function setTransform(g) {
-        const controlboxHeight = document.getElementById("interface").getBoundingClientRect().height
+        let controlboxHeight = document.getElementById("interface").getBoundingClientRect().height
 
-        const k = (_this.height) / (2 * _this.treeGraph.treePositions.radius)
+        controlboxHeight = _this.app.groupBy.length == 1 ? 0 : controlboxHeight
+
+
+        const k = (_this.height - controlboxHeight / 2) / (2 * _this.treeGraph.treePositions.radius)
         const x = _this.width / 2 - _this.treeGraph.treePositions.rootX
-        const y = _this.height / 2 - _this.treeGraph.treePositions.rootY
+        const y = _this.height / 2 - _this.treeGraph.treePositions.rootY + controlboxHeight
 
         g.attr("transform", `translate(${x},${y}) scale(${k})`);
     }

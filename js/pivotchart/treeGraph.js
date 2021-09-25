@@ -45,8 +45,14 @@ TreeGraph.prototype.startSimulation = function () {
     this.simulation.on("tick", treeTick);
 
     function treeTick(e) {
+        const groupBy = _this.app.groupBy
+        const ShowOrder = new Map(
+            groupBy.map((d, i) => ([d, 0.125 - (i) * 0.025]))
+        )
+
         const leaves = []
-        if (_this.simulation.alpha() < 0.5 && _this.treePositions.show === false) {
+        const alpha = _this.simulation.alpha()
+        if (alpha < 0.5 && _this.treePositions.show === false) {
             _this.treeNode
                 .attr("x", (d) => {
                     if (d.group === "fakeRoot") {
@@ -62,8 +68,6 @@ TreeGraph.prototype.startSimulation = function () {
             )
             _this.treePositions.radius = largestRadius
         }
-
-        let groupBy = _this.groupBy
 
         _this.mainGraph.simulation
             .force(
@@ -89,19 +93,37 @@ TreeGraph.prototype.startSimulation = function () {
             .attr("x1", (d) => (d.source.type === "leaf" ? d.source.cx : d.source.x))
             .attr("y1", (d) => (d.source.type === "leaf" ? d.source.cy : d.source.y))
             .attr("x2", (d) => (d.target.type === "leaf" ? d.target.cx : d.target.x))
-            .attr("y2", (d) => (d.target.type === "leaf" ? d.target.cy : d.target.y));
+            .attr("y2", (d) => (d.target.type === "leaf" ? d.target.cy : d.target.y))
+            .style("display", l => displayOrder(l.target.group, l.target.type))
 
         _this.treeNode
             .attr("cx", (d) => (d.type === "leaf" ? d.cx : d.x))
-            .attr("cy", (d) => (d.type === "leaf" ? d.cy : d.y));
+            .attr("cy", (d) => (d.type === "leaf" ? d.cy : d.y))
+            .style("display", d => displayOrder(d.group, d.type))
 
         _this.treeLabel
-            .attr("x", function (d) {
-                return d.x - _this.baseTriangle(d.r)
-            })
-            .attr("y", function (d) {
-                return d.y - _this.baseTriangle(d.r)
-            });
+            .attr("x", (d) => d.x - _this.baseTriangle(d.r))
+            .attr("y", (d) => d.y - _this.baseTriangle(d.r))
+            .style("display", d => displayOrder(d.group, d.type))
+
+        function displayOrder(nodeGroup, nodeType) {
+            let display = "none"
+            if (nodeType === "label" && nodeGroup === "fakeRoot" && alpha < 0.5) {
+                display = "block"
+            } else if (nodeType === "label" && alpha < ShowOrder.get(nodeGroup)) {
+                display = "block"
+            } else if (nodeType === "leaf" && alpha < ShowOrder.get(nodeGroup) - 0.025) {
+                display = "block"
+            } else if (nodeType === "leaf" && alpha < [...ShowOrder.values()][ShowOrder.size - 1] - 0.025) {
+                display = "block"
+            }
+            return display
+        }
+        console.log()
+
+        _this.mainGraph.node.style("display", d => displayOrder("none", "leaf"))
+        _this.mainGraph.nodeImage.style("display", d => displayOrder("none", "leaf"))
+        _this.mainGraph.mainHulls.style("display", d => displayOrder("none", "leaf"))
 
         function getFociTree(groupBy, node) {
             return _this.pivotChart.clusterMap.get(groupBy.map((k) => node[k]).join("-") + "-leaf");
@@ -242,7 +264,9 @@ TreeGraph.prototype.renderTreeNode = function () {
     let _this = this
     this.treeNode = this.treeNode
         .data(this.treeNodes, (d) => d.id)
-        .join("circle")
+        .join(enter => enter.append("circle"),
+            update => update,
+            exit => exit.remove())
         .attr("r", (d) => d.r)
         .attr("class", (d) => d.name)
         .attr("fill", function (d) {
@@ -256,18 +280,7 @@ TreeGraph.prototype.renderTreeNode = function () {
             _this.handleClick(d)
             _this.app.updateDocumentList({ group: d.group, groupNames: d.groupNames })
         })
-        .call(
-            d3.drag()
-                .on("start", (event, d) => {
-                    _this.simulation.alpha(0.5).restart()
-                })
-                .on("drag", function (event, d) {
-                    d.x = event.x
-                    d.y = event.y
-                })
-                .on("end", function (event, d) {
-                })
-        )
+
 
     this.treeNode.append("title").text(function (d) {
         return d.name;
@@ -327,37 +340,6 @@ TreeGraph.prototype.renderTreeLabel = function () {
         });
 }
 
-// TreeGraph.prototype.renderRootLabel = function () {
-//     const _this = this
-
-//     this.rootLabel = this.rootLabel
-//         .data(this.treeNodes.filter((d) => d.type === "root"))
-//         .join("foreignObject")
-//         .attr("class", 'root-foreignobject')
-//         .attr("width", function (d) {
-//             return _this.baseTriangle(d.r) * 4
-//         })
-//         .attr("height", function (d) {
-//             return _this.baseTriangle(d.r) * 4
-//         })
-//         .style("font-size", (d) => {
-//             const multiplier = Math.floor(d.name.length / 18) + 1;
-//             return `${d.r / (3.5 * multiplier)}px`;
-//         })
-//         .style("color", "white")
-
-//     const searchQuery = [...new Set(this.app.data.map(d => d.search_query))][0]
-
-//     this.rootLabelDiv = this.rootLabel
-//         .append("xhtml:div")
-//         .attr("class", "root-label-container")
-//         .append("div")
-//         .attr("class", "root-label")
-//         .html((d) => (`
-//             <p>${searchQuery}</p>
-//         `))
-// }
-
 TreeGraph.prototype.updateTree = function () {
     let _this = this
     let treeLinks = this.treeLinks
@@ -368,34 +350,28 @@ TreeGraph.prototype.updateTree = function () {
     this.simulation
         .force(
             "treeLink",
-            d3
-                .forceLink(treeLinks)
+            d3.forceLink(treeLinks)
                 .id((d) => d.id)
                 .distance((d) => d.distance)
                 .strength(2.3)
         )
         .force(
             "tree-charge",
-            d3.forceManyBody().strength((d) => -80 * d.r)
+            d3.forceManyBody().strength((d) => {
+                return -80 * d.r
+            })
         )
-        .force("x", d3.forceX(height / 2))
-        .force("y", d3.forceY(height / 2));
+        .force("x", d3.forceX(0))
+        .force("y", d3.forceY(0));
 
     let [newtreeNodes, newtreeLinks] = this.getTreeData();
 
     this.treeNodes = newtreeNodes;
-
     this.treeLinks = newtreeLinks;
-
-    this.renderTreeNode()
-
     this.treeLinks = this.getTreeLinks();
-
+    this.renderTreeNode()
     this.renderTreeLink()
-
     this.renderTreeLabel()
-
-    // this.renderRootLabel()
 
     d3.selectAll(".mainlabeldiv").remove();
 
@@ -425,7 +401,7 @@ TreeGraph.prototype.updateTree = function () {
     this.simulation.nodes(this.treeNodes);
 
     this.simulation.alpha(1).restart();
-    this.simulation.alphaDecay(0.005).velocityDecay(0.9);
+    // this.simulation.alphaDecay(0.01).velocityDecay(0.95);
 
     // this.simulation.alphaDecay(0)//.velocityDecay(0.6);
 }

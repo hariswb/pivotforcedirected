@@ -3,7 +3,6 @@ let BarChart = function (app) {
   this.app = app
 
   this.setup()
-  this.setRolledData()
   this.render()
 }
 
@@ -13,51 +12,55 @@ BarChart.prototype.setup = function () {
   this.setLayout()
   this.layerBarChart = this.app.svg2.append("g").attr("id", "bar-chart");
 
-  this.transform()
   this.addBg()
 
   this.addChartTitle()
 
   this.bars = this.layerBarChart.append("g")
+  this.maskBars = this.layerBarChart.append("g")
+
   this.xAxis = this.layerBarChart.append("g")
   this.yAxis = this.layerBarChart.append("g")
 
   this.radioSelection = this.layerBarChart.append("g").attr("class", "radioselection")
   this.brushFilter = this.layerBarChart.append("g")
   this.brushTip = this.layerBarChart.append("g")
-
 }
 
 BarChart.prototype.render = function () {
+  this.setRolledData()
   this.setData()
   this.setCounts()
   this.setClosingPrice()
 
-  this.createScales()
+  this.addScales()
   this.setBarWidth()
 
   this.addXAxis()
   this.addYAxis()
 
+  this.addMaskBars()
   this.addBars()
 
   this.addBrushFilter()
   this.addBrushTip()
 
   this.addInterfalFilter()
+
+  this.transform()
 }
 
 BarChart.prototype.setData = function () {
-  const newData = []
-  const start = this.app.dataRange.start
-  for (let key of this.rolledData.keys()) {
-    if (start && key.getTime() > start.getTime()) {
-      newData.push([key, this.rolledData.get(key)])
-    }
-  }
+  // const newData = []
+  // const start = this.app.dataRange.start
 
+  // for (let key of this.rolledData.keys()) {
+  //   if (start && key.getTime() > start.getTime()) {
+  //     newData.push([key, this.rolledData.get(key)])
+  //   }
+  // }
 
-  this.data = start ? new Map(newData) : this.rolledData
+  this.data = this.rolledData
 }
 
 BarChart.prototype.setRolledData = function () {
@@ -75,8 +78,6 @@ BarChart.prototype.setRolledData = function () {
   )
 }
 
-
-
 BarChart.prototype.addBg = function () {
   this.layerBarChart
     .append("rect")
@@ -92,18 +93,13 @@ BarChart.prototype.addBg = function () {
 BarChart.prototype.addBars = function () {
   let _this = this
   this.bars
+    .attr("id", "bars")
     .selectAll("rect")
-    .data([...this.data], ([key, val]) => key)
-    .join(
-      enter => enter.append("rect"),
-      update => update,
-      exit => exit.remove()
-    )
+    .data([...this.data], (d) => d[0])
+    .join("rect")
     .attr("id", "bars")
     .attr("fill", this.layout.barFill)
-    .attr("x", function (d) {
-      return _this.layout.margin.left + _this.x(d[0]) - _this.barWidth / 2
-    })
+    .attr("x", (d) => _this.x(d[0]))
     .attr("y", function (d) {
       return _this.layout.margin.top + _this.y(d[1].length)
     })
@@ -113,6 +109,16 @@ BarChart.prototype.addBars = function () {
     })
 }
 
+BarChart.prototype.addMaskBars = function () {
+  this.maskBarsClip = this.maskBars.append("clipPath").attr("id", "maskBars").append("rect")
+    .attr("width", this.layout.width - this.layout.margin.left - this.layout.margin.right)
+    .attr("height", this.layout.height - this.layout.margin.top - this.layout.margin.bottom)
+    .attr("x", 0)
+    .attr("y", this.layout.margin.top)
+
+  this.bars
+    .attr("clip-path", "url(#maskBars)")
+}
 
 BarChart.prototype.addChartTitle = function () {
   this.layerBarChart
@@ -138,23 +144,21 @@ BarChart.prototype.addInterfalFilter = function (params) {
   const _this = this
 
   const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const latest = d3.max(this.rolledData.keys())//new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const dayInMiliseconds = 1000 * 60 * 60 * 24
-
-  console.log()
 
   const intervals = {
     DAILY: {
       name: "1D",
-      date: new Date(today.getTime() - 19 * dayInMiliseconds)
+      date: new Date(latest.getTime() - 1 * dayInMiliseconds)
     },
     WEEKLY: {
       name: "7D",
-      date: new Date(today.getTime() - 25 * dayInMiliseconds)
+      date: new Date(latest.getTime() - 6 * dayInMiliseconds)
     },
     MONTHLY: {
       name: "30D",
-      date: new Date(today.getTime() - 48 * dayInMiliseconds)
+      date: new Date(latest.getTime() - 29 * dayInMiliseconds)
     },
     ALL: {
       name: "ALL",
@@ -177,7 +181,7 @@ BarChart.prototype.addInterfalFilter = function (params) {
         .append("span").html(([key, val]) => val.name)
         .on("click", (event, [key, val]) => {
           _this.app.dataRange.start = val.date
-          _this.app.dataRange.end = today
+          _this.app.dataRange.end = latest
 
           _this.render()
           _this.app.updateApp()
@@ -191,8 +195,8 @@ BarChart.prototype.addInterfalFilter = function (params) {
 BarChart.prototype.addBrushFilter = function () {
   let _this = this
   let brushSize = {
-    x1: 0,
-    x2: this.layout.width - this.layout.margin.right - this.layout.margin.left,
+    x1: this.x(this.app.dataRange.start),
+    x2: this.x(this.app.dataRange.end),
     y1: this.layout.height - this.layout.margin.bottom,
     y2: this.layout.height - this.layout.margin.bottom + 30
   }
@@ -204,8 +208,7 @@ BarChart.prototype.addBrushFilter = function () {
   this.brushFilter
     .call(brush)
     .call(brush.move, [brushSize.x1, brushSize.x2]).attr(
-      "transform",
-      `translate(${this.layout.margin.left},${0})`
+      "transform", `translate(${0},${0})`
     )
 
   function brushing(event) {
@@ -233,7 +236,7 @@ BarChart.prototype.addBrushTip = function () {
 
   this.brushTip.attr("class", "brush-tip").attr(
     "transform",
-    `translate(${this.layout.margin.left},${0})`
+    `translate(${0},${0})`
   )
 
   let format = d3.timeFormat("%b/%d")
@@ -288,6 +291,14 @@ BarChart.prototype.transform = function () {
     "transform",
     `translate(${window.innerWidth * 0.55},${0})`
   );
+
+  this.bars.attr("transform", `translate(${this.layout.margin.left},${0})`)
+  this.xAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`)
+  this.yAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.margin.top})`)
+  this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
+  this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
+  // this.brushTipTexts.attr("transform", `translate(${this.layout.margin.left},${0})`)
+
 }
 
 BarChart.prototype.setCounts = function () {
@@ -298,31 +309,21 @@ BarChart.prototype.setClosingPrice = function () {
   this.closingPrice = [...this.data.values()].map((d) => d.closing_price);
 }
 
-BarChart.prototype.createScales = function () {
+BarChart.prototype.addScales = function () {
   this.x = d3
     .scaleTime()
-    .domain([d3.min(this.data.keys()), d3.max(this.data.keys())])
-    .rangeRound([0, this.layout.width - this.layout.margin.right - this.layout.margin.left]);
+    .domain([this.app.dataRange.start, this.app.dataRange.end])
+    .range([0, this.layout.width - this.layout.margin.right - this.layout.margin.left]);
 
   this.y = d3
     .scaleLinear()
     .domain([0, d3.max(this.counts)])
     .range([this.layout.height - this.layout.margin.top - this.layout.margin.bottom, 0]);
-
-
 }
 
 BarChart.prototype.setBarWidth = function () {
-  const oneDay = 24 * 60 * 60 * 1000;
-  const dateDiffMs = d3.max(this.data.keys()) - d3.min(this.data.keys());
-  const dateNumDiff = Math.round(Math.abs(dateDiffMs / oneDay));
-  this.barsSection = (this.layout.width - this.layout.margin.left - this.layout.margin.right)
-  this.barWidth = this.barsSection
-    / dateNumDiff;
-  const maxBarWidth = this.barsSection / 30
-  this.barPadding = 0.2 * this.barWidth
-  this.barWidth = this.barWidth - this.barPadding
-  this.barWidth = this.barWidth > maxBarWidth ? maxBarWidth : this.barWidth
+  this.barWidth = (this.layout.width - this.layout.margin.left - this.layout.margin.right) / this.data.size * 0.5
+  this.barWidth = 5
 }
 
 BarChart.prototype.addXAxis = function () {
@@ -331,9 +332,7 @@ BarChart.prototype.addXAxis = function () {
   this.xAxis
     .attr("id", "xAxis")
     .call(axisBottom)
-    .attr("transform",
-      `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`
-    )
+
     .style("color", this.layout.textColor);
 }
 
@@ -345,7 +344,7 @@ BarChart.prototype.addYAxis = function () {
     .call(axisLeft)
     .attr(
       "transform",
-      `translate(${this.layout.margin.left - this.barWidth / 2 - this.barPadding},${this.layout.margin.top
+      `translate(${0},${this.layout.margin.top
       })`
     )
     .style("color", this.layout.textColor)

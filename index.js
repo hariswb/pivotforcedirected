@@ -126,6 +126,8 @@ App.prototype.prepareData = function () {
         _this.rawData[i].date_string = date.toDateString();
     });
 
+    this.dataRange.start = d3.min(this.rawData.map(d => d.date_published))
+    this.dataRange.end = d3.max(this.rawData.map(d => d.date_published))
 
     this.rawData = this.getUniquesBy(this.rawData, "url")
     // this.rawData = this.getLastThirtyDays(this.rawData, 30)
@@ -179,7 +181,7 @@ App.prototype.filterByDate = function (data, range) {
 
     return data.filter(function (d) {
         let nodeDate = d.date_published.getTime()
-        return start < nodeDate && nodeDate < end
+        return start <= nodeDate && nodeDate <= end
     })
 }
 

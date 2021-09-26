@@ -94,36 +94,14 @@ TreeGraph.prototype.startSimulation = function () {
             .attr("y1", (d) => (d.source.type === "leaf" ? d.source.cy : d.source.y))
             .attr("x2", (d) => (d.target.type === "leaf" ? d.target.cx : d.target.x))
             .attr("y2", (d) => (d.target.type === "leaf" ? d.target.cy : d.target.y))
-            .style("display", l => displayOrder(l.target.group, l.target.type))
 
         _this.treeNode
             .attr("cx", (d) => (d.type === "leaf" ? d.cx : d.x))
             .attr("cy", (d) => (d.type === "leaf" ? d.cy : d.y))
-            .style("display", d => displayOrder(d.group, d.type))
 
         _this.treeLabel
             .attr("x", (d) => d.x - _this.baseTriangle(d.r))
             .attr("y", (d) => d.y - _this.baseTriangle(d.r))
-            .style("display", d => displayOrder(d.group, d.type))
-
-        function displayOrder(nodeGroup, nodeType) {
-            let display = "none"
-            if (nodeType === "label" && nodeGroup === "fakeRoot" && alpha < 0.5) {
-                display = "block"
-            } else if (nodeType === "label" && alpha < ShowOrder.get(nodeGroup)) {
-                display = "block"
-            } else if (nodeType === "leaf" && alpha < ShowOrder.get(nodeGroup) - 0.025) {
-                display = "block"
-            } else if (nodeType === "leaf" && alpha < [...ShowOrder.values()][ShowOrder.size - 1] - 0.025) {
-                display = "block"
-            }
-            return display
-        }
-        console.log()
-
-        _this.mainGraph.node.style("display", d => displayOrder("none", "leaf"))
-        _this.mainGraph.nodeImage.style("display", d => displayOrder("none", "leaf"))
-        _this.mainGraph.mainHulls.style("display", d => displayOrder("none", "leaf"))
 
         function getFociTree(groupBy, node) {
             return _this.pivotChart.clusterMap.get(groupBy.map((k) => node[k]).join("-") + "-leaf");
@@ -260,7 +238,7 @@ TreeGraph.prototype.getTreeLinks = function () {
     });
 }
 
-TreeGraph.prototype.renderTreeNode = function () {
+TreeGraph.prototype.renderTreeNode = function (data) {
     let _this = this
     this.treeNode = this.treeNode
         .data(this.treeNodes, (d) => d.id)
@@ -343,24 +321,17 @@ TreeGraph.prototype.renderTreeLabel = function () {
 TreeGraph.prototype.updateTree = function () {
     let _this = this
     let treeLinks = this.treeLinks
-    let height = this.pivotChart.height
 
     this.treePositions.show = false
 
     this.simulation
-        .force(
-            "treeLink",
-            d3.forceLink(treeLinks)
-                .id((d) => d.id)
-                .distance((d) => d.distance)
-                .strength(2.3)
+        .force("treeLink", d3.forceLink(treeLinks).id((d) => d.id)
+            .distance((d) => d.distance)
+            .strength(2)
         )
-        .force(
-            "tree-charge",
-            d3.forceManyBody().strength((d) => {
-                return -80 * d.r
-            })
-        )
+        .force("tree-charge", d3.forceManyBody().strength((d) => {
+            return -80 * 30//* d.r
+        }))
         .force("x", d3.forceX(0))
         .force("y", d3.forceY(0));
 
@@ -368,7 +339,39 @@ TreeGraph.prototype.updateTree = function () {
 
     this.treeNodes = newtreeNodes;
     this.treeLinks = newtreeLinks;
+
     this.treeLinks = this.getTreeLinks();
+
+    const labels = this.treeNodes.filter(d => d.type === "label" && d.group !== "fakeRoot").map(d => d.id)
+    const leaves = this.treeNodes.filter(d => d.type === "leaf").map(d => d.id)
+
+    for (node of newtreeNodes) {
+        const { posX, posY } = initTreeFoci(node)
+        node.x = posX
+        node.y = posY
+
+        if (node.group === "fakeRoot") {
+            node.fx = 0
+            node.fy = 0
+        }
+    }
+
+    function initTreeFoci(node) {
+        let x = 0
+        let y = 0
+        if (node.type === "label" && node.group !== "fakeRoot") {
+            const f = labels.indexOf(node.id) / labels.length
+            x = 30 * Math.sin(2 * Math.PI * f)
+            y = 30 * Math.cos(2 * Math.PI * f)
+        } else if (node.type === "leaf") {
+            const f = leaves.indexOf(node.id) / leaves.length
+            x = 100 * Math.sin(2 * Math.PI * f)
+            y = 100 * Math.cos(2 * Math.PI * f)
+        }
+
+        return { posX: x, posY: y }
+    }
+
     this.renderTreeNode()
     this.renderTreeLink()
     this.renderTreeLabel()
@@ -388,21 +391,11 @@ TreeGraph.prototype.updateTree = function () {
 
     this.pivotChart.addClusterMap(this.treeNodes)
 
-    // documentCounts();
-
-    // const inputsGroups = d3.selectAll(".as-group");
-    // inputsGroups.each(function () {
-    //     const thisGroup = this.getAttribute("value");
-    //     d3.select(this).style("background-color", treeColors(thisGroup));
-    // });
-
     this.simulation.force("treeLink").links(this.treeLinks);
 
     this.simulation.nodes(this.treeNodes);
 
     this.simulation.alpha(1).restart();
-    // this.simulation.alphaDecay(0.01).velocityDecay(0.95);
-
-    // this.simulation.alphaDecay(0)//.velocityDecay(0.6);
+    this.simulation.alphaDecay(0.005).velocityDecay(0.95);
 }
 

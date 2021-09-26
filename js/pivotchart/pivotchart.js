@@ -12,8 +12,8 @@ let PivotChart = function (app) {
     this.height = window.innerHeight;
     this.clusterMap = null;
     this.hierarchyCenter = [this.width / 2, this.height / 2];
-
     this.clusterMap = new Map()
+    this.initialTransform = false
 
     this.nodes = []
     this.links = []
@@ -139,19 +139,24 @@ PivotChart.prototype.addTransform = function () {
     this.zoomedElement.transition()
         .duration(750).call(_this.zoom.transform, d3.zoomIdentity);
 
+    if (this.initialTransform === false) {
+        transform(initTransform)
+        this.initialTransform = true
+    }
+
     setTimeout(
         function listenTreePositions(params) {
             if (_this.treeGraph.treePositions.show === false) {
                 setTimeout(listenTreePositions, t)
             } else {
-                init()
+                transform(setTransform)
             }
         }, t)
 
-    function init() {
+    function transform(transformation) {
         for (let el of mainElements) {
             d3.select(el).transition()
-                .duration(750).call(setTransform)
+                .duration(750).call(transformation)
         }
     }
 
@@ -160,17 +165,14 @@ PivotChart.prototype.addTransform = function () {
 
         const resizeFactor = 3
 
-        // const k = (_this.height) / (resizeFactor * _this.treeGraph.treePositions.radius)
-        // const x = _this.width / 2 - (_this.treeGraph.treePositions.rootX) * k
-        // const y = _this.height / 2 - (_this.treeGraph.treePositions.rootY) * k
-
-
         const k = (_this.height) / (resizeFactor * _this.treeGraph.treePositions.radius)
         const x = _this.width / 2 - (_this.treeGraph.treePositions.rootX) * k
         const y = _this.height / 2 - (_this.treeGraph.treePositions.rootY) * k
 
-
         g.attr("transform", `translate(${x},${y}) scale(${k})`);
+    }
+    function initTransform(g) {
+        g.attr("transform", `translate(${_this.width / 2},${_this.height / 2}) scale(${1})`);
     }
 }
 

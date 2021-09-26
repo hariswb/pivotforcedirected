@@ -5,7 +5,7 @@ let App = function (rawData) {
 
     this.dataRange = { start: null, end: null }
 
-    this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
+    this.groupBy = ["emotion"]//[this.keys[0],]; // Set default hiearchy attribute
 
     this.extras = [];
 

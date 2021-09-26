@@ -324,17 +324,6 @@ TreeGraph.prototype.updateTree = function () {
 
     this.treePositions.show = false
 
-    this.simulation
-        .force("treeLink", d3.forceLink(treeLinks).id((d) => d.id)
-            .distance((d) => d.distance)
-            .strength(2)
-        )
-        .force("tree-charge", d3.forceManyBody().strength((d) => {
-            return -80 * 30//* d.r
-        }))
-        .force("x", d3.forceX(0))
-        .force("y", d3.forceY(0));
-
     let [newtreeNodes, newtreeLinks] = this.getTreeData();
 
     this.treeNodes = newtreeNodes;
@@ -345,30 +334,33 @@ TreeGraph.prototype.updateTree = function () {
     const labels = this.treeNodes.filter(d => d.type === "label" && d.group !== "fakeRoot").map(d => d.id)
     const leaves = this.treeNodes.filter(d => d.type === "leaf").map(d => d.id)
 
+    const maxRadius = d3.max(this.treeNodes.map(d => d.r))
+
     for (node of newtreeNodes) {
+        // if (node.group === "fakeRoot") {
+        //     node.fx = 0
+        //     node.fy = 0
+        // }
         const { posX, posY } = initTreeFoci(node)
         node.x = posX
         node.y = posY
-
-        if (node.group === "fakeRoot") {
-            node.fx = 0
-            node.fy = 0
-        }
     }
 
     function initTreeFoci(node) {
         let x = 0
         let y = 0
-        if (node.type === "label" && node.group !== "fakeRoot") {
+
+        if (node.group === "fakeRoot") {
+            x, y = 0
+        } else if (node.type === "label" && node.group !== "fakeRoot") {
             const f = labels.indexOf(node.id) / labels.length
-            x = 30 * Math.sin(2 * Math.PI * f)
-            y = 30 * Math.cos(2 * Math.PI * f)
+            x = maxRadius * Math.sin(2 * Math.PI * f)
+            y = maxRadius * Math.cos(2 * Math.PI * f)
         } else if (node.type === "leaf") {
             const f = leaves.indexOf(node.id) / leaves.length
-            x = 100 * Math.sin(2 * Math.PI * f)
-            y = 100 * Math.cos(2 * Math.PI * f)
+            x = 300 * Math.sin(2 * Math.PI * f)
+            y = 300 * Math.cos(2 * Math.PI * f)
         }
-
         return { posX: x, posY: y }
     }
 
@@ -391,11 +383,24 @@ TreeGraph.prototype.updateTree = function () {
 
     this.pivotChart.addClusterMap(this.treeNodes)
 
+    this.simulation
+        .force("treeLink", d3.forceLink(treeLinks).id((d) => d.id)
+            .distance((d) => d.distance)
+            .strength(2)
+        )
+        .force("tree-collide", d3.forceCollide().radius(1).strength(1))
+        .force("tree-charge", d3.forceManyBody().strength((d) => {
+            const s = d.group === "fakeRoot" ? maxRadius : d.r
+            return -170 * d.r
+        }))
+        .force("x", d3.forceX(0))
+        .force("y", d3.forceY(0));
+
     this.simulation.force("treeLink").links(this.treeLinks);
 
     this.simulation.nodes(this.treeNodes);
 
     this.simulation.alpha(1).restart();
-    this.simulation.alphaDecay(0.005).velocityDecay(0.95);
+    this.simulation.alphaDecay(0.005).velocityDecay(0.99);
 }
 

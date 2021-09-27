@@ -3,7 +3,7 @@ let BarChart = function (app) {
   this.app = app
 
   this.setup()
-  this.render()
+  this.draw()
 }
 
 BarChart.prototype.setup = function () {
@@ -27,11 +27,13 @@ BarChart.prototype.setup = function () {
   this.brushTip = this.layerBarChart.append("g")
 }
 
-BarChart.prototype.render = function () {
+BarChart.prototype.draw = function () {
   this.setRolledData()
   this.setData()
   this.setCounts()
   this.setClosingPrice()
+
+  this.addIntervalFilter()
 
   this.addScales()
   this.setBarWidth()
@@ -45,7 +47,6 @@ BarChart.prototype.render = function () {
   this.addBrushFilter()
   this.addBrushTip()
 
-  this.addInterfalFilter()
 
   this.transform()
 }
@@ -140,34 +141,38 @@ BarChart.prototype.addChartTitle = function () {
     .html("Document Volume")
 }
 
-BarChart.prototype.addInterfalFilter = function (params) {
+BarChart.prototype.addIntervalFilter = function (params) {
   const _this = this
 
   const now = new Date()
   const latest = d3.max(this.rolledData.keys())//new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const dayInMiliseconds = 1000 * 60 * 60 * 24
 
-  const intervals = {
+  this.dateIntervals = {
     DAILY: {
       name: "1D",
-      date: new Date(latest.getTime() - 1 * dayInMiliseconds)
+      start: new Date(latest.getTime() - 1 * dayInMiliseconds),
+      end: latest
     },
     WEEKLY: {
       name: "7D",
-      date: new Date(latest.getTime() - 6 * dayInMiliseconds)
+      start: new Date(latest.getTime() - 6 * dayInMiliseconds),
+      end: latest
     },
     MONTHLY: {
       name: "30D",
-      date: new Date(latest.getTime() - 29 * dayInMiliseconds)
+      start: new Date(latest.getTime() - 29 * dayInMiliseconds),
+      end: latest
     },
     ALL: {
       name: "ALL",
-      date: d3.min(this.rolledData.keys())
+      start: d3.min(this.rolledData.keys()),
+      end: latest
     }
   }
 
   this.radioSelection.selectAll("foreignObject")
-    .data(Object.entries(intervals), ([key, val]) => key)
+    .data(Object.entries(this.dateIntervals), ([key, val]) => key)
     .join(
       enter => enter.append("foreignObject")
         .style("cursor", "pointer")
@@ -180,10 +185,10 @@ BarChart.prototype.addInterfalFilter = function (params) {
         .style("color", "white")
         .append("span").html(([key, val]) => val.name)
         .on("click", (event, [key, val]) => {
-          _this.app.dataRange.start = val.date
-          _this.app.dataRange.end = latest
+          _this.app.dataRange.start = val.start
+          _this.app.dataRange.end = val.end
 
-          _this.render()
+          _this.draw()
           _this.app.updateApp()
         })
       ,
@@ -297,7 +302,6 @@ BarChart.prototype.transform = function () {
   this.yAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.margin.top})`)
   this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
-  // this.brushTipTexts.attr("transform", `translate(${this.layout.margin.left},${0})`)
 
 }
 
@@ -332,7 +336,6 @@ BarChart.prototype.addXAxis = function () {
   this.xAxis
     .attr("id", "xAxis")
     .call(axisBottom)
-
     .style("color", this.layout.textColor);
 }
 
@@ -342,16 +345,9 @@ BarChart.prototype.addYAxis = function () {
   this.yAxis
     .attr("id", "yAxis")
     .call(axisLeft)
-    .attr(
-      "transform",
-      `translate(${0},${this.layout.margin.top
-      })`
-    )
     .style("color", this.layout.textColor)
     .call((g) => g.select(".domain").remove());
 }
-
-
 
 BarChart.prototype.updateDarkMode = function () {
   d3.selectAll("#bars").attr("fill", this.layout.barFill)

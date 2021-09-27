@@ -15,6 +15,7 @@ let TreeGraph = function (pivotChart, mainGraph) {
         radius: 0,
     }
 
+
     this.treeColors = d3.scaleOrdinal().range(d3.schemeCategory10);
     this.treeLinks = [];
     this.treeNodes = [];
@@ -43,6 +44,10 @@ TreeGraph.prototype.startSimulation = function () {
     let _this = this
 
     this.simulation.on("tick", treeTick);
+
+    if (this.app.firstPaint === false) {
+        this.app.firstPaint = true
+    }
 
     function treeTick(e) {
         const groupBy = _this.app.groupBy

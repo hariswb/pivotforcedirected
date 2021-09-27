@@ -5,11 +5,15 @@ let App = function (rawData) {
 
     this.dataRange = { start: null, end: null }
 
-    this.groupBy = ["emotion"]//[this.keys[0],]; // Set default hiearchy attribute
+    this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
 
     this.extras = [];
 
     this.darkMode = true;
+
+    this.firstPaint = false
+
+    this.addLoading()
 
     this.prepareData()
     this.setData()
@@ -26,6 +30,19 @@ let App = function (rawData) {
 
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
     this.handleDarkMode()
+}
+
+App.prototype.addLoading = function () {
+    const t = 100
+    setTimeout(
+        function listenFirstPaint(params) {
+            if (this.firstPaint === false) {
+                setTimeout(listenFirstPaint, t)
+            } else {
+                d3.select(".loading-screen").style("display", "none")
+            }
+        }, t)
+
 }
 
 App.prototype.addSvg = function () {
@@ -60,6 +77,8 @@ App.prototype.removeGroupBy = function (value) {
     this.pivotChart.updateChart()
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 };
+
+
 
 App.prototype.updateGroupBy = function (groupingDimensions) {
     this.groupBy = groupingDimensions
@@ -126,8 +145,8 @@ App.prototype.prepareData = function () {
         _this.rawData[i].date_string = date.toDateString();
     });
 
-    this.dataRange.start = d3.min(this.rawData.map(d => d.date_published))
-    this.dataRange.end = d3.max(this.rawData.map(d => d.date_published))
+    this.dataRange.start = d3.min(this.rawData.map(d => new Date(d.date_string)))
+    this.dataRange.end = d3.max(this.rawData.map(d => new Date(d.date_string)))
 
     this.rawData = this.getUniquesBy(this.rawData, "url")
     // this.rawData = this.getLastThirtyDays(this.rawData, 30)
@@ -184,7 +203,6 @@ App.prototype.filterByDate = function (data, range) {
         return start <= nodeDate && nodeDate <= end
     })
 }
-
 
 App.prototype.addDocumentCounts = function () {
     let _this = this

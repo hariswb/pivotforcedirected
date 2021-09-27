@@ -48,7 +48,7 @@ BarChart.prototype.draw = function () {
   this.addBrushTip()
 
 
-  this.transform()
+  this.addTransform()
 }
 
 BarChart.prototype.setData = function () {
@@ -100,7 +100,7 @@ BarChart.prototype.addBars = function () {
     .join("rect")
     .attr("id", "bars")
     .attr("fill", this.layout.barFill)
-    .attr("x", (d) => _this.x(d[0]))
+    .attr("x", (d) => _this.x(d[0]) - _this.barWidth / 2)
     .attr("y", function (d) {
       return _this.layout.margin.top + _this.y(d[1].length)
     })
@@ -112,9 +112,9 @@ BarChart.prototype.addBars = function () {
 
 BarChart.prototype.addMaskBars = function () {
   this.maskBarsClip = this.maskBars.append("clipPath").attr("id", "maskBars").append("rect")
-    .attr("width", this.layout.width - this.layout.margin.left - this.layout.margin.right)
+    .attr("width", this.layout.width - this.layout.margin.left - this.layout.margin.right + this.barWidth)
     .attr("height", this.layout.height - this.layout.margin.top - this.layout.margin.bottom)
-    .attr("x", 0)
+    .attr("x", -this.barWidth / 2)
     .attr("y", this.layout.margin.top)
 
   this.bars
@@ -181,8 +181,9 @@ BarChart.prototype.addIntervalFilter = function (params) {
         .attr("x", this.layout.width - this.layout.margin.right + 20)
         .attr("y", (_, i) => i * 20 + _this.layout.height / 3)
         .append("xhtml:div")
+        .attr("class", "date-interval")
         .style("font-size", 18)
-        .style("color", "white")
+        .style("color", _this.layout.textColor)
         .append("span").html(([key, val]) => val.name)
         .on("click", (event, [key, val]) => {
           _this.app.dataRange.start = val.start
@@ -291,7 +292,7 @@ BarChart.prototype.updateBrushTip = function () {
 }
 
 
-BarChart.prototype.transform = function () {
+BarChart.prototype.addTransform = function () {
   this.app.svg2.attr(
     "transform",
     `translate(${window.innerWidth * 0.55},${0})`
@@ -299,7 +300,7 @@ BarChart.prototype.transform = function () {
 
   this.bars.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.xAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`)
-  this.yAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.margin.top})`)
+  this.yAxis.attr("transform", `translate(${this.layout.margin.left - this.barWidth * 2},${this.layout.margin.top})`)
   this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
 
@@ -326,8 +327,10 @@ BarChart.prototype.addScales = function () {
 }
 
 BarChart.prototype.setBarWidth = function () {
-  this.barWidth = (this.layout.width - this.layout.margin.left - this.layout.margin.right) / this.data.size * 0.5
-  this.barWidth = 5
+  const barsRegion = this.layout.width - this.layout.margin.left - this.layout.margin.right
+  this.barWidth = barsRegion / this.data.size
+  // console.log(this.barWidth)
+  this.barWidth = 2
 }
 
 BarChart.prototype.addXAxis = function () {
@@ -356,6 +359,7 @@ BarChart.prototype.updateDarkMode = function () {
   d3.select("#barchart-bg").attr("fill", this.layout.bgColor)
   d3.select(".bar-chart-title-span").style("color", this.layout.textColor)
   d3.selectAll(".brush-tips").attr("fill", this.layout.textColor)
+  d3.selectAll(".date-interval").style("color", this.layout.textColor)
 }
 
 BarChart.prototype.setLayout = function () {

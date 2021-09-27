@@ -199,7 +199,7 @@ App.prototype.filterByDate = function (data, range) {
     let end = range.end.getTime()
 
     return data.filter(function (d) {
-        let nodeDate = d.date_published.getTime()
+        let nodeDate = new Date(d.date_string).getTime()
         return start <= nodeDate && nodeDate <= end
     })
 }

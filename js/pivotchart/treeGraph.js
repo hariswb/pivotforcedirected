@@ -393,10 +393,10 @@ TreeGraph.prototype.updateTree = function () {
             .distance((d) => d.distance)
             .strength(2)
         )
-        .force("tree-collide", d3.forceCollide().radius(1).strength(1))
+        // .force("tree-collide", d3.forceCollide().radius(1).strength(1))
         .force("tree-charge", d3.forceManyBody().strength((d) => {
             const s = d.group === "fakeRoot" ? maxRadius : d.r
-            return -170 * d.r
+            return -maxRadius * 4 * d.r
         }))
         .force("x", d3.forceX(0))
         .force("y", d3.forceY(0));

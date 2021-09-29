@@ -6,13 +6,8 @@ let Interface = function (app) {
 
 Interface.prototype.addDimensionDropdown = function (divElement, keyId) {
     const _this = this
-
-    this.handleClickTimeout = new Date()
-
     const dropdownList = this.dimensionsMap.get(keyId)
-
     const selection = d3.select(divElement)
-
     const dropdownContentId = `dropdown-dimension-content-${keyId}`
 
     const dropdownListElements = selection
@@ -52,6 +47,9 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyId) {
 
                 if (this.triggered !== true) {
                     _this.app.updateDocumentExclusion(event.type, keyId, d.content, d.show)
+                    d3.selectAll(`.${dropdownContentId}`).attr("", function () {
+                        this.triggered = false
+                    })
                     this.triggered = true
                 } else {
                     _this.app.updateDocumentExclusion(event.type + "-cleared", keyId, d.content, d.show)
@@ -59,7 +57,6 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyId) {
                 }
 
                 d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
-
             })
             .style("color", "#111")
             .html(d => d.content))

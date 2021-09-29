@@ -13,7 +13,7 @@ let App = function (rawData) {
 
     this.firstPaint = false
 
-    this.documentExcludedIds = []
+    this.documentExcluded = []
 
     this.addLoading()
 
@@ -86,27 +86,33 @@ App.prototype.updateGroupBy = function (groupingDimensions) {
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 }
 
-App.prototype.updateDocumentExclusion = function (type, dimension, content, show) {
+App.prototype.updateDocumentExclusion = function (type, dimension, val, show) {
     switch (type) {
         case "click":
-            const excludedIds = this.data.filter(d => d[dimension] === content).map(d => d.id)
             if (show === false) {
-                this.documentExcludedIds = this.documentExcludedIds.concat(excludedIds)
+                this.documentExcluded.push({ dimension: dimension, val: val })
             } else if (show === true) {
-                this.documentExcludedIds = this.documentExcludedIds.filter(d => !excludedIds.includes(d))
+                this.documentExcluded = this.documentExcluded.filter(d => !(d.val === val && d.dimension === dimension))
             }
             break;
         case "dblclick":
-            this.documentExcludedIds = this.data.filter(d => d[dimension] !== content).map(d => d.id)
+            const newExcluded = this.interface.dimensionsMap.get(dimension)
+                .filter(d => d.content !== val)
+                .map(d => ({ dimension: dimension, val: d.content }))
+
+            this.documentExcluded = this.documentExcluded.filter(d => d.dimension !== dimension).concat(newExcluded)
             break;
         case "dblclick-cleared":
-            this.documentExcludedIds = []
+            this.documentExcluded = this.documentExcluded.filter(d => d.dimension !== dimension)
             break;
         default:
             break;
     }
+    console.log(this.documentExcluded)
 
-    this.pivotChart.updateChartExtra()
+
+
+    // this.pivotChart.updateChartExtra()
 }
 
 App.prototype.setExtras = function (k) {

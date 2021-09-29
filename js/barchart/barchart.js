@@ -171,30 +171,40 @@ BarChart.prototype.addIntervalFilter = function (params) {
     }
   }
 
-  this.radioSelection.selectAll("foreignObject")
+  const radioFo = this.radioSelection.selectAll("foreignObject")
     .data(Object.entries(this.dateIntervals), ([key, val]) => key)
     .join(
       enter => enter.append("foreignObject")
+        .attr("class", "radio-selection-fo")
         .style("cursor", "pointer")
         .attr("width", 40)
         .attr("height", 25)
-        .attr("x", this.layout.width - this.layout.margin.right + 20)
-        .attr("y", (_, i) => i * 20 + _this.layout.height / 3)
-        .append("xhtml:div")
-        .attr("class", "date-interval")
-        .style("font-size", 18)
-        .style("color", _this.layout.textColor)
-        .append("span").html(([key, val]) => val.name)
-        .on("click", (event, [key, val]) => {
+        .attr("x", 5)
+        .attr("y", (_, i) => i * 20)
+        .on("click", function (event, [key, val]) {
           _this.app.dataRange.start = val.start
           _this.app.dataRange.end = val.end
 
+          d3.selectAll(".radio-selection-fo").attr("x", 5)
+          d3.select(this).attr('x', 0)
+
           _this.draw()
           _this.app.updateApp()
+          _this.updateBrushTip()
         })
+
+        .append("xhtml:div")
+        .attr("class", "date-interval")
+        .style("color", _this.layout.textColor)
+        .style("font-size", "14px")
       ,
       update => update,
       exit => exit.remove())
+
+  radioFo.append("img").attr("class", "date-selection-icon")
+    .attr("src", "./static/west_black_24dp.svg").attr("width", 14)
+    .style("filter", this.layout.imageFilter)
+  radioFo.append("text").text(([key, val]) => val.name)
 
 }
 
@@ -303,6 +313,7 @@ BarChart.prototype.addTransform = function () {
   this.yAxis.attr("transform", `translate(${this.layout.margin.left - this.barWidth * 2},${this.layout.margin.top})`)
   this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
+  this.radioSelection.attr("transform", `translate(${this.layout.width - this.layout.margin.right},${this.layout.height / 3})`)
 
 }
 
@@ -315,9 +326,11 @@ BarChart.prototype.setClosingPrice = function () {
 }
 
 BarChart.prototype.addScales = function () {
+  const allDataKeys = [...this.data.keys()]
+
   this.x = d3
     .scaleTime()
-    .domain([this.app.dataRange.start, this.app.dataRange.end])
+    .domain([d3.min(allDataKeys), d3.max(allDataKeys)])
     .range([0, this.layout.width - this.layout.margin.right - this.layout.margin.left]);
 
   this.y = d3
@@ -360,6 +373,7 @@ BarChart.prototype.updateDarkMode = function () {
   d3.select(".bar-chart-title-span").style("color", this.layout.textColor)
   d3.selectAll(".brush-tips").attr("fill", this.layout.textColor)
   d3.selectAll(".date-interval").style("color", this.layout.textColor)
+  d3.selectAll(".date-selection-icon").style("filter", this.layout.imageFilter)
 }
 
 BarChart.prototype.setLayout = function () {
@@ -377,5 +391,6 @@ BarChart.prototype.setLayout = function () {
     lineStroke: function () { return _this.app.darkMode ? "#3978e6" : "#3978e6" },
     bgColor: function () { return _this.app.darkMode ? "#222" : "#fff" },
     textColor: function () { return _this.app.darkMode ? "#fff" : "#111" },
+    imageFilter: function () { return _this.app.darkMode ? "invert(1)" : "invert(0)" },
   };
 }

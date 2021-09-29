@@ -13,6 +13,8 @@ let App = function (rawData) {
 
     this.firstPaint = false
 
+    this.documentExcludedIds = []
+
     this.addLoading()
 
     this.prepareData()
@@ -42,7 +44,6 @@ App.prototype.addLoading = function () {
                 d3.select(".loading-screen").style("display", "none")
             }
         }, t)
-
 }
 
 App.prototype.addSvg = function () {
@@ -78,13 +79,34 @@ App.prototype.removeGroupBy = function (value) {
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 };
 
-
-
 App.prototype.updateGroupBy = function (groupingDimensions) {
     this.groupBy = groupingDimensions
     this.addDocumentCounts()
     this.pivotChart.updateChart()
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
+}
+
+App.prototype.updateDocumentExclusion = function (type, dimension, content, show) {
+    switch (type) {
+        case "click":
+            const excludedIds = this.data.filter(d => d[dimension] === content).map(d => d.id)
+            if (show === false) {
+                this.documentExcludedIds = this.documentExcludedIds.concat(excludedIds)
+            } else if (show === true) {
+                this.documentExcludedIds = this.documentExcludedIds.filter(d => !excludedIds.includes(d))
+            }
+            break;
+        case "dblclick":
+            this.documentExcludedIds = this.data.filter(d => d[dimension] !== content).map(d => d.id)
+            break;
+        case "dblclick-cleared":
+            this.documentExcludedIds = []
+            break;
+        default:
+            break;
+    }
+
+    this.pivotChart.updateChartExtra()
 }
 
 App.prototype.setExtras = function (k) {
@@ -108,19 +130,6 @@ App.prototype.getUniquesBy = function (data, key) {
         }
     }
     return result
-}
-
-App.prototype.getLastThirtyDays = function (rawData, days) {
-    const nowSec = (new Date()).getTime()
-    const thirtyDaysInSec = 1000 * 60 * 60 * 24 * days
-    const threshold = nowSec - thirtyDaysInSec
-
-    const filteredData = rawData.filter(d => {
-        const t = d.date_published.getTime()
-        return t > threshold
-    })
-
-    return filteredData
 }
 
 App.prototype.prepareData = function () {
@@ -149,7 +158,6 @@ App.prototype.prepareData = function () {
     this.dataRange.end = d3.max(this.rawData.map(d => new Date(d.date_string)))
 
     this.rawData = this.getUniquesBy(this.rawData, "url")
-    // this.rawData = this.getLastThirtyDays(this.rawData, 30)
 }
 
 App.prototype.updateApp = function () {

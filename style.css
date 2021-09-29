@@ -28,6 +28,8 @@ body:-webkit-full-screen {
   z-index: 1;
 } */
 
+/* Drag and drop dimension*/
+
 .group-dump {
   width: 100vw;
   height: 100vh;
@@ -92,6 +94,9 @@ body:-webkit-full-screen {
 }
 
 
+
+
+
 /* DRAG & DROP*/
 
 .extras {
@@ -106,20 +111,18 @@ body:-webkit-full-screen {
   background-color: #eee;
   font-weight: normal;
   margin: 5px;
-  padding: 5px;
+  padding: 0px;
   border: 0px solid black;
-  border-radius: 2px;
+  border-radius: 4px;
 }
-.active {
-  background-color: #aaa;
-  color: #fff;
-}
+
 .group-by {
   background-color: #fff;
   padding: 2px;
   border: 1.5px dashed #333;
   border-radius: 5px;
 }
+
 .as-group {
   background-color: #aaa;
   color: #fff;
@@ -128,6 +131,37 @@ body:-webkit-full-screen {
   cursor: pointer;
 }
 .rect-extra {
+}
+
+/* Dropdown Dimension */
+.dropdown-button{
+  cursor: pointer;
+  background-color: inherit;
+  border: 0px solid black;
+  border-radius: 2px;
+  padding: 5px;
+}
+
+.dropdown-dimension-content{
+  position: absolute; 
+  z-index: 3;
+  background-color: #eee;
+  padding: 5px;
+  border-radius: 0px 0px 2px 2px;
+}
+
+.dropdown-dimension-content-none{
+  display: none;
+}
+.dropdown-dimension-content-block{
+  display: block;
+}
+
+.dropdown-dimension-content span{
+  display: block;
+  margin-top: 5px;
+  /* margin-bottom: 5px; */
+  overflow: hidden;
 }
 
 /* Document List */
@@ -521,3 +555,12 @@ align-items: center;
     transform: rotate(360deg);
   }
 }
+
+/* Date Interval */
+.date-interval{
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: center;
+}
+

@@ -131,6 +131,7 @@ MainGraph.prototype.isolateForce = function (force, nodetype) {
             _this.pivotChart.nodes.filter((node) => node.type === nodetype)
         );
     };
+
     return force;
 }
 
@@ -305,7 +306,7 @@ MainGraph.prototype.addHulls = function () {
         .selectAll("foreignObject");
 }
 
-MainGraph.prototype.updateNodeimage = function () {
+MainGraph.prototype.updateNodeImage = function () {
     let nodes = this.pivotChart.nodes
     let iconUrl = this.iconUrl
     let layout = this.layout
@@ -505,7 +506,7 @@ MainGraph.prototype.setMainLinks = function () {
 
 }
 
-MainGraph.prototype.renderNode = function () {
+MainGraph.prototype.updateNode = function () {
     let _this = this
     this.node = this.node
         .data(_this.pivotChart.nodes, (d) => d.id)
@@ -516,7 +517,7 @@ MainGraph.prototype.renderNode = function () {
         .attr("fill", _this.layout.nodeFill)
         .attr("r", function (d) {
             return d.type === "main" ? _this.layout.nodeRadius : _this.layout.extraNodeRadius
-        });
+        })
 }
 
 MainGraph.prototype.updateColoring = function (event, d) {
@@ -568,9 +569,7 @@ MainGraph.prototype.updateColoring = function (event, d) {
     }
 };
 
-
-
-MainGraph.prototype.renderLink = function () {
+MainGraph.prototype.updateLink = function () {
     this.link = this.link.data(this.pivotChart.links, (l) => [l.source, l.target]).join("line");
 
     this.link
@@ -578,6 +577,15 @@ MainGraph.prototype.renderLink = function () {
         .attr("stroke", this.layout.linestroke)
         .attr("stroke-width", this.layout.linestrokeWidth)
         .attr("opacity", this.layout.lineopacity);
+}
+
+MainGraph.prototype.updateNodeVisibility = function () {
+    const _this = this
+    this.node
+        .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
+    this.nodeImage
+        .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
+
 }
 
 MainGraph.prototype.updateExtra = function () {
@@ -599,10 +607,13 @@ MainGraph.prototype.updateExtra = function () {
 
     this.fociExtra = this.getFociExtra(this.extras);
 
-    this.renderNode()
+    this.updateNode()
+    this.updateNodeImage()
+
+    this.updateNodeVisibility()
 
     this.setMainLinks()
-    this.renderLink()
+    this.updateLink()
 
     this.simulation
         .force(
@@ -651,111 +662,4 @@ MainGraph.prototype.updateExtra = function () {
     this.simulation.force("link").links(this.pivotChart.links);
 
     this.simulation.alpha(1).restart();
-
-    this.nodeImage = this.nodeImage
-        .data(this.pivotChart.nodes)
-        .join("image")
-        .style("pointer-events", "none")
-        .attr("href", function (d) {
-            if (d.type === "main") {
-                return _this.iconUrl.document;
-            } else {
-                return _this.iconUrl[d.extra];
-            }
-        })
-        .attr("filter", _this.layout.imageFilter);
-
-    let extrasClusters = this.pivotChart.app.extras.map(function (g) {
-        const obj = {
-            cluster: g,
-            nodes: _this.node.filter((d) => d.extra === g),
-        };
-        obj.counts = obj.nodes.nodes().length;
-        return obj;
-    });
-
-    this.extraHulls = this.extraHulls
-        .data(extrasClusters, (d) => d.cluster)
-        .join("path")
-        .style("cursor", "pointer")
-        .attr("id", (d) => "extrahull-" + d.cluster)
-        .attr("d", function (d) {
-            return _this.hullPath(d, "extra")
-        })
-        .attr("fill", _this.layout.hullFill)
-        .attr("stroke", _this.layout.hullStroke)
-        .attr("stroke-width", _this.layout.hullStrokeWidth)
-        .attr("opacity", _this.layout.hullOpacity)
-        .call(
-            d3
-                .drag()
-                .on("start", (e, d) => { })
-                .on("drag", function (e, d) {
-                    _this.simulation
-                        .force(
-                            "positionxExtra",
-                            _this.isolateForce(
-                                _this.posX(function (node) {
-                                    return node.extra === d.cluster ? e.x : _this.fociExtra[node.extra].x
-                                }, 0.1),
-                                "extra"
-                            )
-                        )
-                        .force(
-                            "positionyExtra",
-                            _this.isolateForce(
-                                _this.posY(function (node) {
-                                    return node.extra === d.cluster ? e.y : _this.fociExtra[node.extra].y
-                                }, 0.1),
-                                "extra"
-                            )
-                        );
-                })
-                .on("end", function (e, d) {
-                    _this.fociExtra[d.cluster].x = e.x;
-                    _this.fociExtra[d.cluster].y = e.y;
-                })
-        );
-
-
-    this.extraHullsText = this.extraHullsText
-        .data(extrasClusters)
-        .join("foreignObject")
-        .attr("class", "extra-hull-text")
-        .attr("width", function (d) {
-            return _this.fociExtra[d.cluster].clusterR
-        })
-        .attr("height", this.layout.extraNodeRadius * 2)
-        .style("font-size", 20);
-
-    d3.selectAll(".extra-hull-text-div").remove();
-
-    this.extraHullsTextSpan = this.extraHullsText
-        .append("xhtml:div")
-        .attr("class", "extra-hull-text-div")
-        .append("span")
-        .attr("class", "extra-text")
-        .style("color", this.layout.extraFontColor)
-        .html((d) => d.counts + " " + d.cluster);
-
-
-    this.extraNodeText = this.extraNodeText
-        .data(this.pivotChart.nodes.filter(d => d.type === "extra"))
-        .join("foreignObject")
-        .attr("id", (d, i) => "extraNodeText" + d.extra + i)
-        .attr("class", "extra-node-text")
-        .style("pointer-events", "none")
-        .attr("width", this.layout.extraNodeRadius * 4)
-        .attr("height", this.layout.extraNodeRadius * 3)
-        .style("font-size", 12);
-
-    d3.selectAll(".extraNodeTextDiv").remove();
-
-    this.extraNodeTextSpan = this.extraNodeText
-        .append("xhtml:div")
-        .attr("class", "extra-node-text-div")
-        .append("span")
-        .attr("class", "extra-text")
-        .style("color", this.layout.extraFontColor)
-        .html((d) => d.name);
 }

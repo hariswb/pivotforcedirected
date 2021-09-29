@@ -4,7 +4,81 @@ let Interface = function (app) {
     this.updateDimensions()
 }
 
+Interface.prototype.addDimensionDropdown = function (divElement, keyId) {
+    const _this = this
 
+    this.handleClickTimeout = new Date()
+
+    const dropdownList = this.dimensionsMap.get(keyId)
+
+    const selection = d3.select(divElement)
+
+    const dropdownContentId = `dropdown-dimension-content-${keyId}`
+
+    const dropdownListElements = selection
+        .append("div")
+        .attr("id", dropdownContentId)
+        .attr("class", ` dropdown-dimension-content dropdown-dimension-content-none`)
+        .selectAll("span")
+        .data(dropdownList, d => d.val)
+        .join(enter => enter
+            .append("span")
+            .attr("class", `${dropdownContentId}`)
+            .on("click", function (event, d) {
+                const past = this.past ? this.past : 0
+                const now = new Date().getTime()
+                const waited = now - past
+
+                if (waited < 300) {
+                    clearTimeout(this.triggerClick)
+                } else {
+                    this.triggerClick = setTimeout(() => {
+                        d.show = !d.show
+                        d3.select(this).style("color", d.show === true ? "#111" : "#bbb")
+                        _this.app.updateDocumentExclusion(event.type, keyId, d.content, d.show)
+                    }, 300)
+                }
+                this.past = now
+            })
+            .on("dblclick", function (event, d) {
+                const _that = this
+
+                _this.dimensionsMap.get(keyId).forEach(k => {
+                    k.show = k.content === d.content ? true : false
+                    if (_that.triggered === true) {
+                        k.show = true
+                    }
+                })
+
+                if (this.triggered !== true) {
+                    _this.app.updateDocumentExclusion(event.type, keyId, d.content, d.show)
+                    this.triggered = true
+                } else {
+                    _this.app.updateDocumentExclusion(event.type + "-cleared", keyId, d.content, d.show)
+                    this.triggered = false
+                }
+
+                d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
+
+            })
+            .style("color", "#111")
+            .html(d => d.content))
+
+    selection.select(".dropdown-button").on("click", function (event, d) {
+        const dropdownButton = d3.select(this)
+        const dropdownContents = d3.select(`#dropdown-dimension-content-${keyId}`)
+        if (this.selected === true) {
+            dropdownContents.classed("dropdown-dimension-content-none", true)
+            this.selected = false
+        } else {
+            dropdownContents.style("width", `${this.getBoundingClientRect().width - 10}px`).classed("dropdown-dimension-content-none", false)
+            dropdownButton.style("border-radius", "2px 2px 0px 0px")
+            this.selected = true
+        }
+    })
+
+    const elementWidth = divElement.getBoundingClientRect().width
+}
 
 Interface.prototype.updateDimensions = function () {
     let _this = this
@@ -12,31 +86,32 @@ Interface.prototype.updateDimensions = function () {
     let keys = this.app.keys
     let extras = this.app.extras
     let elementsExtras = document.getElementById("extras")
+    this.dimensionsMap = new Map()
 
     d3.selectAll(".extra").remove()
 
     keys.forEach(function (key) {
-        let extra = document.createElement("div")
-        extra.id = `extra-${key}`
-        extra.className = "draggable extra"
-        extra.innerHTML = `${key}: ${_this.app.dimensionCounts.get(key)}`
-        extra.draggable = "true"
-        extra.setAttribute("value", key)
-        extra.addEventListener("dragstart", function (event) {
+        _this.dimensionsMap.set(key, [...new Set(_this.app.data.map(d => d[key]))].map(d => ({ content: d, show: true })))
+
+        let dimension = _this.createDimensionElement(key)
+
+        _this.addDimensionDropdown(dimension, key)
+
+        dimension.addEventListener("dragstart", function (event) {
             _this.onDragStart(event)
         })
 
-        // extra.addEventListener("click", function (event) {
-        //     if (_this.app.extras.includes(key)) {
-        //         document.getElementById(`extra-${key}`).classList.remove("active");
-        //     } else if (!_this.app.extras.includes(key)) {
-        //         document.getElementById(`extra-${key}`).classList.add("active");
-        //     }
+        dimension.addEventListener("click", function (event) {
+            // if (_this.app.extras.includes(key)) {
+            //     document.getElementById(`extra-${key}`).classList.remove("active");
+            // } else if (!_this.app.extras.includes(key)) {
+            //     document.getElementById(`extra-${key}`).classList.add("active");
+            // }
 
-        //     _this.app.setExtras(key)
-        // })
+            // _this.app.setExtras(key)
+        })
 
-        elementsExtras.appendChild(extra)
+        elementsExtras.appendChild(dimension)
     });
 
     let elementGroupBy = document.getElementById("group-by")
@@ -44,6 +119,7 @@ Interface.prototype.updateDimensions = function () {
     elementGroupBy.addEventListener("dragover", function (event) {
         _this.onDragOver(event)
     })
+
     elementGroupBy.addEventListener("drop", function (event) {
         _this.onDrop(event)
     })
@@ -57,10 +133,8 @@ Interface.prototype.updateDimensions = function () {
         _this.onDropDump(event)
     })
 
-    groupBy.forEach(function (group) {
-        const defaultGroup = document
-            .getElementById("extra-" + group)
-            .cloneNode(true);
+    groupBy.forEach(function (key) {
+        const defaultGroup = _this.createDimensionElement(key)
 
         defaultGroup.addEventListener("dragstart", function (event) {
             _this.onDragStart(event)
@@ -83,12 +157,34 @@ Interface.prototype.onDragOver = function (event) {
     event.preventDefault();
 }
 
+Interface.prototype.createDimensionElement = function (keyName) {
+    const element = document.createElement("div")
+    element.classList.add("extra")
+    element.classList.add("draggable")
+    element.id = "extra-" + keyName
+    element.draggable = "true"
+    element.setAttribute("value", keyName)
+
+    const dropdownButton = document.createElement("div")
+    dropdownButton.classList.add("dropdown-button")
+
+    dropdownButton.innerHTML = `${keyName}: ${this.app.dimensionCounts.get(keyName)}`
+    element.appendChild(dropdownButton)
+    return element
+}
+
 Interface.prototype.onDrop = function (event) {
     let _this = this
     const id = event.dataTransfer.getData("text");
-    const draggableElement = document.getElementById(id).cloneNode(true);
-    const dropZone = event.currentTarget;
 
+    const draggableElement = document.getElementById(id).cloneNode(true);
+    const keyName = draggableElement.getAttribute("value")
+
+    const clonedElement = [...draggableElement.classList].includes("as-group") === true ?
+        draggableElement :
+        this.createDimensionElement(keyName)
+
+    const dropZone = event.currentTarget;
 
     let dropZoneChildren = Array.from(dropZone.children).map(a => {
         const child = {}
@@ -102,7 +198,7 @@ Interface.prototype.onDrop = function (event) {
     const newChild = {
         centerX: event.clientX,
         centerY: event.clientY,
-        dimension: draggableElement.getAttribute("value")
+        dimension: clonedElement.getAttribute("value")
     }
 
     let newGrouping = dropZoneChildren.filter(d => d.dimension !== newChild.dimension)
@@ -111,17 +207,16 @@ Interface.prototype.onDrop = function (event) {
 
     newGrouping = newGrouping.sort((a, b) => (a.centerX > b.centerX) ? 1 : ((b.centerX > a.centerX) ? -1 : 0)).map(d => d.dimension)
 
-    draggableElement.addEventListener("dragstart", function (event) {
+    clonedElement.addEventListener("dragstart", function (event) {
         _this.onDragStart(event)
     })
 
-
     if (
-        draggableElement.classList.contains("as-group") &&
+        clonedElement.classList.contains("as-group") &&
         dropZone.children.length > 1
     ) {
         dropZone.removeChild(document.getElementById(id));
-        dropZone.appendChild(draggableElement);
+        dropZone.appendChild(clonedElement);
 
         reorderGrouping(dropZone, newGrouping)
         this.app.updateGroupBy(newGrouping);
@@ -129,9 +224,9 @@ Interface.prototype.onDrop = function (event) {
 
     const currentGroups = dropZoneChildren.map(d => d.dimension)
     if (!currentGroups.includes(newChild.dimension)) {
-        draggableElement.classList.add("as-group");
+        clonedElement.classList.add("as-group");
 
-        dropZone.appendChild(draggableElement);
+        dropZone.appendChild(clonedElement);
         reorderGrouping(dropZone, newGrouping)
 
         this.app.updateGroupBy(newGrouping);

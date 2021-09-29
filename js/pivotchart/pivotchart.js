@@ -107,7 +107,7 @@ PivotChart.prototype.setNodes = function () {
         obj.id = index;
         obj.type = "main"
         return obj;
-    });
+    })
 }
 
 PivotChart.prototype.addBackground = function () {

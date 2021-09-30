@@ -139,7 +139,11 @@ body:-webkit-full-screen {
   background-color: inherit;
   border: 0px solid black;
   border-radius: 2px;
-  padding: 5px;
+  padding: 7.5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }
 
 .dropdown-dimension-content{
@@ -148,10 +152,13 @@ body:-webkit-full-screen {
   background-color: #eee;
   padding: 5px;
   border-radius: 0px 0px 2px 2px;
+  overflow-y: auto;
+  max-height: 50vh;
 }
 
 .dropdown-dimension-content-none{
   display: none;
+
 }
 .dropdown-dimension-content-block{
   display: block;
@@ -159,10 +166,23 @@ body:-webkit-full-screen {
 
 .dropdown-dimension-content span{
   display: block;
+  padding-left: 17px;
   margin-top: 5px;
   /* margin-bottom: 5px; */
+  /* overflow: hidden; */
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.dropdown-button-arrow {
+  margin:0px;
+  padding:0px;
+  padding-right: 5px;
+  width: 10px;
+  pointer-events: none;
+}
+
 
 /* Document List */
 

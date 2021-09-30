@@ -14,6 +14,7 @@ let App = function (rawData) {
     this.firstPaint = false
 
     this.documentExcluded = []
+    this.documentExcludedIds = []
 
     this.addLoading()
 
@@ -86,7 +87,7 @@ App.prototype.updateGroupBy = function (groupingDimensions) {
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 }
 
-App.prototype.updateDocumentExclusion = function (type, dimension, val, show) {
+App.prototype.updateDocumentExcluded = function (type, dimension, val, show) {
     switch (type) {
         case "click":
             if (show === false) {
@@ -108,11 +109,12 @@ App.prototype.updateDocumentExclusion = function (type, dimension, val, show) {
         default:
             break;
     }
-    console.log(this.documentExcluded)
+    this.documentExcludedIds = []
+    this.documentExcluded.forEach(({ dimension, val }) => {
+        this.documentExcludedIds = this.documentExcludedIds.concat(this.data.filter(d => d[dimension] === val).map(d => d.id))
+    })
 
-
-
-    // this.pivotChart.updateChartExtra()
+    this.pivotChart.updateChartExtra()
 }
 
 App.prototype.setExtras = function (k) {

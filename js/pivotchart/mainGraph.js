@@ -585,7 +585,6 @@ MainGraph.prototype.updateNodeVisibility = function () {
         .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
     this.nodeImage
         .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
-
 }
 
 MainGraph.prototype.updateExtra = function () {

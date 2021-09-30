@@ -4,13 +4,25 @@ let Interface = function (app) {
     this.updateDimensions()
 }
 
-Interface.prototype.addDimensionDropdown = function (divElement, keyId) {
+Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
     const _this = this
-    const dropdownList = this.dimensionsMap.get(keyId)
+    const dropdownList = this.dimensionsMap.get(keyName)
     const selection = d3.select(divElement)
-    const dropdownContentId = `dropdown-dimension-content-${keyId}`
+    const dropdownContentId = `dropdown-dimension-content-${keyName}`
 
-    const dropdownListElements = selection
+    const imageUrl = {
+        arrowDown: "./static/arrow_drop_down_black_24dp.svg",
+        arrowRight: "./static/arrow_right_black_24dp.svg"
+    }
+
+    const button = selection.append("div")
+        .attr("class", "dropdown-button")
+
+    const buttonImg = button.append("img").attr("class", "dropdown-button-arrow").attr("src", imageUrl.arrowRight)
+
+    const buttonText = button.append("span").html(`${keyName}: ${this.app.dimensionCounts.get(keyName)}`)
+
+    selection
         .append("div")
         .attr("id", dropdownContentId)
         .attr("class", ` dropdown-dimension-content dropdown-dimension-content-none`)
@@ -19,62 +31,70 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyId) {
         .join(enter => enter
             .append("span")
             .attr("class", `${dropdownContentId}`)
+            .style("color", d => d.show === true ? "#111" : "#bbb")
+            .html(d => d.content)
             .on("click", function (event, d) {
-                const past = this.past ? this.past : 0
+                const past = d.past ? d.past : 0
                 const now = new Date().getTime()
                 const waited = now - past
 
                 if (waited < 300) {
-                    clearTimeout(this.triggerClick)
+                    clearTimeout(d.triggerClick)
                 } else {
-                    this.triggerClick = setTimeout(() => {
+                    d.triggerClick = setTimeout(() => {
                         d.show = !d.show
-                        d3.select(this).style("color", d.show === true ? "#111" : "#bbb")
-                        _this.app.updateDocumentExclusion(event.type, keyId, d.content, d.show)
+                        // d3.select(this).style("color", d.show === true ? "#111" : "#bbb")
+                        d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
+                        _this.app.updateDocumentExcluded(event.type, keyName, d.content, d.show)
                     }, 300)
                 }
-                this.past = now
+
+                d.past = now
             })
             .on("dblclick", function (event, d) {
-                const _that = this
-
-                _this.dimensionsMap.get(keyId).forEach(k => {
-                    k.show = k.content === d.content ? true : false
-                    if (_that.triggered === true) {
-                        k.show = true
-                    }
-                })
-
-                if (this.triggered !== true) {
-                    _this.app.updateDocumentExclusion(event.type, keyId, d.content, d.show)
-                    d3.selectAll(`.${dropdownContentId}`).attr("", function () {
-                        this.triggered = false
+                if (d.triggered !== true) {
+                    _this.dimensionsMap.get(keyName).forEach(k => {
+                        k.show = k.content === d.content ? true : false
                     })
-                    this.triggered = true
+                    _this.app.updateDocumentExcluded(event.type, keyName, d.content, d.show)
+                    d3.selectAll(`.${dropdownContentId}`).attr("", function () {
+                        d.triggered = false
+                    })
+                    d.triggered = true
                 } else {
-                    _this.app.updateDocumentExclusion(event.type + "-cleared", keyId, d.content, d.show)
-                    this.triggered = false
+                    _this.dimensionsMap.get(keyName).forEach(k => {
+                        k.show = true
+                    })
+                    _this.app.updateDocumentExcluded(event.type + "-cleared", keyName, d.content, d.show)
+                    d.triggered = false
                 }
 
                 d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
             })
-            .style("color", "#111")
-            .html(d => d.content))
 
-    selection.select(".dropdown-button").on("click", function (event, d) {
+        )
+
+
+    // selection.select(`.dropdown-button`)
+    button.on("click", function (event, d) {
+        event.preventDefault()
         const dropdownButton = d3.select(this)
-        const dropdownContents = d3.select(`#dropdown-dimension-content-${keyId}`)
+        const buttonImg = dropdownButton.select(".dropdown-button-arrow")
+        const dropdownContents = selection.select(`#dropdown-dimension-content-${keyName}`)
         if (this.selected === true) {
             dropdownContents.classed("dropdown-dimension-content-none", true)
+            dropdownButton.style("border-radius", "2px")
+            buttonImg.attr("src", imageUrl.arrowRight)
             this.selected = false
         } else {
-            dropdownContents.style("width", `${this.getBoundingClientRect().width - 10}px`).classed("dropdown-dimension-content-none", false)
+            dropdownContents.style("width", `${this.getBoundingClientRect().width - 10}px`)
+                .classed("dropdown-dimension-content-none", false)
             dropdownButton.style("border-radius", "2px 2px 0px 0px")
+            buttonImg.attr("src", imageUrl.arrowDown)
             this.selected = true
         }
     })
 
-    const elementWidth = divElement.getBoundingClientRect().width
 }
 
 Interface.prototype.updateDimensions = function () {
@@ -92,20 +112,8 @@ Interface.prototype.updateDimensions = function () {
 
         let dimension = _this.createDimensionElement(key)
 
-        _this.addDimensionDropdown(dimension, key)
-
         dimension.addEventListener("dragstart", function (event) {
             _this.onDragStart(event)
-        })
-
-        dimension.addEventListener("click", function (event) {
-            // if (_this.app.extras.includes(key)) {
-            //     document.getElementById(`extra-${key}`).classList.remove("active");
-            // } else if (!_this.app.extras.includes(key)) {
-            //     document.getElementById(`extra-${key}`).classList.add("active");
-            // }
-
-            // _this.app.setExtras(key)
         })
 
         elementsExtras.appendChild(dimension)
@@ -138,8 +146,17 @@ Interface.prototype.updateDimensions = function () {
         })
 
         defaultGroup.classList.add("as-group");
+
+        _this.invertColorFilter(defaultGroup)
+
         const dropZone = document.getElementById("group-by");
         dropZone.appendChild(defaultGroup);
+    })
+}
+
+Interface.prototype.invertColorFilter = function (divElement) {
+    d3.select(divElement).select("img").style("filter", function (d) {
+        return divElement.classList.contains("as-group") ? "invert(1)" : "invert(0)"
     })
 }
 
@@ -162,11 +179,8 @@ Interface.prototype.createDimensionElement = function (keyName) {
     element.draggable = "true"
     element.setAttribute("value", keyName)
 
-    const dropdownButton = document.createElement("div")
-    dropdownButton.classList.add("dropdown-button")
+    this.addDimensionDropdown(element, keyName)
 
-    dropdownButton.innerHTML = `${keyName}: ${this.app.dimensionCounts.get(keyName)}`
-    element.appendChild(dropdownButton)
     return element
 }
 
@@ -177,9 +191,12 @@ Interface.prototype.onDrop = function (event) {
     const draggableElement = document.getElementById(id).cloneNode(true);
     const keyName = draggableElement.getAttribute("value")
 
-    const clonedElement = [...draggableElement.classList].includes("as-group") === true ?
-        draggableElement :
-        this.createDimensionElement(keyName)
+    const clonedElement = this.createDimensionElement(keyName)
+
+    if (draggableElement.classList.contains("as-group")) {
+        clonedElement.classList.add("as-group")
+        _this.invertColorFilter(clonedElement)
+    }
 
     const dropZone = event.currentTarget;
 
@@ -220,8 +237,10 @@ Interface.prototype.onDrop = function (event) {
     }
 
     const currentGroups = dropZoneChildren.map(d => d.dimension)
+
     if (!currentGroups.includes(newChild.dimension)) {
         clonedElement.classList.add("as-group");
+        this.invertColorFilter(clonedElement)
 
         dropZone.appendChild(clonedElement);
         reorderGrouping(dropZone, newGrouping)

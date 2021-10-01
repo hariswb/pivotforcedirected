@@ -1,6 +1,8 @@
 let Interface = function (app) {
     this.app = app
 
+    this.dimensionsMap = new Map()
+
     this.updateDimensions()
 }
 
@@ -10,12 +12,13 @@ Interface.prototype.updateDimensions = function () {
     let keys = this.app.keys
     let extras = this.app.extras
     let elementsExtras = document.getElementById("extras")
-    this.dimensionsMap = new Map()
 
     d3.selectAll(".extra").remove()
 
     keys.forEach(function (key) {
-        _this.dimensionsMap.set(key, [...new Set(_this.app.data.map(d => d[key]))].map(d => ({ content: d, show: true })))
+        if (!_this.dimensionsMap.has(key)) {
+            _this.dimensionsMap.set(key, [...new Set(_this.app.data.map(d => d[key]))].map(d => ({ content: d, show: true })))
+        }
 
         let dimension = _this.createDimensionElement(key)
 

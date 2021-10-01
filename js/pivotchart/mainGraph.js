@@ -583,10 +583,16 @@ MainGraph.prototype.updateLink = function () {
 MainGraph.prototype.updateNodeVisibility = function () {
     const _this = this
 
+    let documentExcludedIds = []
+    this.app.documentExcluded.forEach(({ dimension, val }) => {
+        documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
+    })
+    console.log(documentExcludedIds)
+
     this.node
-        .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
+        .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
     this.nodeImage
-        .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
+        .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
 
 
     const hullExcluded = _this.app.documentExcluded//.map(k => k.val)

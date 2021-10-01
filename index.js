@@ -109,10 +109,10 @@ App.prototype.updateDocumentExcluded = function (type, dimension, val, show) {
         default:
             break;
     }
-    this.documentExcludedIds = []
-    this.documentExcluded.forEach(({ dimension, val }) => {
-        this.documentExcludedIds = this.documentExcludedIds.concat(this.data.filter(d => d[dimension] === val).map(d => d.id))
-    })
+    // this.documentExcludedIds = []
+    // this.documentExcluded.forEach(({ dimension, val }) => {
+    //     this.documentExcludedIds = this.documentExcludedIds.concat(this.data.filter(d => d[dimension] === val).map(d => d.id))
+    // })
 
     this.pivotChart.updateChartExtra()
 }

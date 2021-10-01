@@ -90,6 +90,7 @@ PivotChart.prototype.updateChart = function () {
 PivotChart.prototype.updateChartExtra = function () {
     this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
+    this.treeGraph.updateTreeVisibility()
 }
 
 PivotChart.prototype.distance = function (xLength, yLength) {

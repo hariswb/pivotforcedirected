@@ -15,6 +15,7 @@ let TreeGraph = function (pivotChart, mainGraph) {
         radius: 0,
     }
 
+    this.treeData = []
 
     this.treeColors = d3.scaleOrdinal().range(d3.schemeCategory10);
     this.treeLinks = [];
@@ -243,7 +244,7 @@ TreeGraph.prototype.getTreeLinks = function () {
     });
 }
 
-TreeGraph.prototype.renderTreeNode = function (data) {
+TreeGraph.prototype.updateTreeNode = function (data) {
     let _this = this
     this.treeNode = this.treeNode
         .data(this.treeNodes, (d) => d.id)
@@ -265,9 +266,37 @@ TreeGraph.prototype.renderTreeNode = function (data) {
         })
 
 
+
     this.treeNode.append("title").text(function (d) {
         return d.name;
     });
+}
+
+TreeGraph.prototype.updateTreeVisibility = function (params) {
+    const _this = this
+    let branchExcluded = _this.app.documentExcluded
+    // branchExcluded = branchExcluded.concat(branchExcluded.map(d => d + "-leaf"))
+    // console.log("=========================")
+    // console.log(_this.app.documentExcluded)
+
+    this.treeNode.style("display", function (d) {
+        return branchExcluded.some(k => {
+            const index = _this.groupBy.indexOf(k.dimension)
+            return d.groupNames[index] === k.val
+        }) ? "none" : "block"
+    })
+    this.treeLabel.style("display", function (d) {
+        return branchExcluded.some(k => {
+            const index = _this.groupBy.indexOf(k.dimension)
+            return d.groupNames[index] === k.val
+        }) ? "none" : "block"
+    })
+    this.treeLink.style("display", function (d) {
+        return branchExcluded.some(k => {
+            const index = _this.groupBy.indexOf(k.dimension)
+            return d.target.groupNames[index] === k.val
+        }) ? "none" : "block"
+    })
 }
 
 TreeGraph.prototype.handleClick = function (node) {
@@ -281,7 +310,7 @@ TreeGraph.prototype.clearColoring = function () {
     this.treeNode.attr("stroke-width", this.layout.labelStrokeWidth)
 }
 
-TreeGraph.prototype.renderTreeLink = function () {
+TreeGraph.prototype.updateTreeLink = function () {
     let layout = this.layout
     let groupBy = this.groupBy
     let treeLinks = this.treeLinks
@@ -302,7 +331,7 @@ TreeGraph.prototype.baseTriangle = function (radius) {
     return Math.cos(Math.PI / 4) * radius;
 }
 
-TreeGraph.prototype.renderTreeLabel = function () {
+TreeGraph.prototype.updateTreeLabel = function () {
     let treeNodes = this.treeNodes
     let _this = this
 
@@ -329,7 +358,9 @@ TreeGraph.prototype.updateTree = function () {
 
     this.treePositions.show = false
 
-    let [newtreeNodes, newtreeLinks] = this.getTreeData();
+    this.treeData = this.getTreeData();
+
+    let [newtreeNodes, newtreeLinks] = this.treeData
 
     this.treeNodes = newtreeNodes;
     this.treeLinks = newtreeLinks;
@@ -369,9 +400,10 @@ TreeGraph.prototype.updateTree = function () {
         return { posX: x, posY: y }
     }
 
-    this.renderTreeNode()
-    this.renderTreeLink()
-    this.renderTreeLabel()
+    this.updateTreeNode()
+    this.updateTreeLink()
+    this.updateTreeLabel()
+    this.updateTreeVisibility()
 
     d3.selectAll(".mainlabeldiv").remove();
 

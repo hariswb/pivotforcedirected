@@ -338,6 +338,7 @@ MainGraph.prototype.updateMainHulls = function () {
                 return {
                     cluster: k,
                     nodes: val.nodes,
+                    groupNames: val.groupNames,
                 };
             }),
             (k) => k
@@ -581,10 +582,24 @@ MainGraph.prototype.updateLink = function () {
 
 MainGraph.prototype.updateNodeVisibility = function () {
     const _this = this
+
     this.node
         .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
     this.nodeImage
         .style('display', d => _this.app.documentExcludedIds.includes(d.id) ? "none" : "block")
+
+
+    const hullExcluded = _this.app.documentExcluded//.map(k => k.val)
+
+    this.mainHulls.attr("display", function (d) {
+        return hullExcluded.some(k => {
+            // console.log(_this.app.groupBy)
+            // return false
+            const index = _this.app.groupBy.indexOf(k.dimension)
+            return d.groupNames[index] === k.val
+        }) ? "none" : "block"
+    })
+
 }
 
 MainGraph.prototype.updateExtra = function () {

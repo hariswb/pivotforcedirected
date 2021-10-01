@@ -587,7 +587,6 @@ MainGraph.prototype.updateNodeVisibility = function () {
     this.app.documentExcluded.forEach(({ dimension, val }) => {
         documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
     })
-    console.log(documentExcludedIds)
 
     this.node
         .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")

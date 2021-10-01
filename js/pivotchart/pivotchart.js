@@ -80,6 +80,8 @@ PivotChart.prototype.restartChart = function () {
 
 PivotChart.prototype.updateChart = function () {
     this.treeGraph.updateTree()
+    this.treeGraph.updateTreeVisibility()
+
     this.mainGraph.updateMainHulls()
     this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
@@ -100,7 +102,6 @@ PivotChart.prototype.distance = function (xLength, yLength) {
 PivotChart.prototype.brighten = function (color) {
     return d3.rgb(color).brighter(0).toString();
 };
-
 
 PivotChart.prototype.setNodes = function () {
     this.nodes = this.app.data.map((d, index) => {

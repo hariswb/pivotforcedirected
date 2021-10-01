@@ -593,8 +593,6 @@ MainGraph.prototype.updateNodeVisibility = function () {
 
     this.mainHulls.attr("display", function (d) {
         return hullExcluded.some(k => {
-            // console.log(_this.app.groupBy)
-            // return false
             const index = _this.app.groupBy.indexOf(k.dimension)
             return d.groupNames[index] === k.val
         }) ? "none" : "block"
@@ -624,7 +622,6 @@ MainGraph.prototype.updateExtra = function () {
     this.updateNode()
     this.updateNodeImage()
 
-    this.updateNodeVisibility()
 
     this.setMainLinks()
     this.updateLink()
@@ -676,4 +673,6 @@ MainGraph.prototype.updateExtra = function () {
     this.simulation.force("link").links(this.pivotChart.links);
 
     this.simulation.alpha(1).restart();
+
+    this.updateNodeVisibility()
 }

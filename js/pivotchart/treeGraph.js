@@ -275,25 +275,22 @@ TreeGraph.prototype.updateTreeNode = function (data) {
 TreeGraph.prototype.updateTreeVisibility = function (params) {
     const _this = this
     let branchExcluded = _this.app.documentExcluded
-    // branchExcluded = branchExcluded.concat(branchExcluded.map(d => d + "-leaf"))
-    // console.log("=========================")
-    // console.log(_this.app.documentExcluded)
 
     this.treeNode.style("display", function (d) {
         return branchExcluded.some(k => {
-            const index = _this.groupBy.indexOf(k.dimension)
+            const index = _this.app.groupBy.indexOf(k.dimension)
             return d.groupNames[index] === k.val
         }) ? "none" : "block"
     })
     this.treeLabel.style("display", function (d) {
         return branchExcluded.some(k => {
-            const index = _this.groupBy.indexOf(k.dimension)
+            const index = _this.app.groupBy.indexOf(k.dimension)
             return d.groupNames[index] === k.val
         }) ? "none" : "block"
     })
     this.treeLink.style("display", function (d) {
         return branchExcluded.some(k => {
-            const index = _this.groupBy.indexOf(k.dimension)
+            const index = _this.app.groupBy.indexOf(k.dimension)
             return d.target.groupNames[index] === k.val
         }) ? "none" : "block"
     })

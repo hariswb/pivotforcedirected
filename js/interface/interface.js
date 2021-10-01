@@ -4,6 +4,63 @@ let Interface = function (app) {
     this.updateDimensions()
 }
 
+Interface.prototype.updateDimensions = function () {
+    let _this = this
+    let groupBy = this.app.groupBy
+    let keys = this.app.keys
+    let extras = this.app.extras
+    let elementsExtras = document.getElementById("extras")
+    this.dimensionsMap = new Map()
+
+    d3.selectAll(".extra").remove()
+
+    keys.forEach(function (key) {
+        _this.dimensionsMap.set(key, [...new Set(_this.app.data.map(d => d[key]))].map(d => ({ content: d, show: true })))
+
+        let dimension = _this.createDimensionElement(key)
+
+        dimension.addEventListener("dragstart", function (event) {
+            _this.onDragStart(event)
+        })
+
+        elementsExtras.appendChild(dimension)
+    });
+
+    let elementGroupBy = document.getElementById("group-by")
+
+    elementGroupBy.addEventListener("dragover", function (event) {
+        _this.onDragOver(event)
+    })
+
+    elementGroupBy.addEventListener("drop", function (event) {
+        _this.onDrop(event)
+    })
+
+    let elementGroupDump = [...document.getElementsByClassName("group-dump")][0]
+    elementGroupDump.addEventListener("dragover", function (event) {
+        _this.onDragOverDump(event)
+    })
+
+    elementGroupDump.addEventListener("drop", function (event) {
+        _this.onDropDump(event)
+    })
+
+    groupBy.forEach(function (key) {
+        const defaultGroup = _this.createDimensionElement(key)
+
+        defaultGroup.addEventListener("dragstart", function (event) {
+            _this.onDragStart(event)
+        })
+
+        defaultGroup.classList.add("as-group");
+
+        _this.invertColorFilter(defaultGroup)
+
+        const dropZone = document.getElementById("group-by");
+        dropZone.appendChild(defaultGroup);
+    })
+}
+
 Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
     const _this = this
     const dropdownList = this.dimensionsMap.get(keyName)
@@ -74,8 +131,6 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
 
         )
 
-
-    // selection.select(`.dropdown-button`)
     button.on("click", function (event, d) {
         event.preventDefault()
         const dropdownButton = d3.select(this)
@@ -93,64 +148,6 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
             buttonImg.attr("src", imageUrl.arrowDown)
             this.selected = true
         }
-    })
-
-}
-
-Interface.prototype.updateDimensions = function () {
-    let _this = this
-    let groupBy = this.app.groupBy
-    let keys = this.app.keys
-    let extras = this.app.extras
-    let elementsExtras = document.getElementById("extras")
-    this.dimensionsMap = new Map()
-
-    d3.selectAll(".extra").remove()
-
-    keys.forEach(function (key) {
-        _this.dimensionsMap.set(key, [...new Set(_this.app.data.map(d => d[key]))].map(d => ({ content: d, show: true })))
-
-        let dimension = _this.createDimensionElement(key)
-
-        dimension.addEventListener("dragstart", function (event) {
-            _this.onDragStart(event)
-        })
-
-        elementsExtras.appendChild(dimension)
-    });
-
-    let elementGroupBy = document.getElementById("group-by")
-
-    elementGroupBy.addEventListener("dragover", function (event) {
-        _this.onDragOver(event)
-    })
-
-    elementGroupBy.addEventListener("drop", function (event) {
-        _this.onDrop(event)
-    })
-
-    let elementGroupDump = [...document.getElementsByClassName("group-dump")][0]
-    elementGroupDump.addEventListener("dragover", function (event) {
-        _this.onDragOverDump(event)
-    })
-
-    elementGroupDump.addEventListener("drop", function (event) {
-        _this.onDropDump(event)
-    })
-
-    groupBy.forEach(function (key) {
-        const defaultGroup = _this.createDimensionElement(key)
-
-        defaultGroup.addEventListener("dragstart", function (event) {
-            _this.onDragStart(event)
-        })
-
-        defaultGroup.classList.add("as-group");
-
-        _this.invertColorFilter(defaultGroup)
-
-        const dropZone = document.getElementById("group-by");
-        dropZone.appendChild(defaultGroup);
     })
 }
 

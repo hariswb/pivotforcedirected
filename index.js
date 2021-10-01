@@ -175,7 +175,6 @@ App.prototype.updateApp = function () {
 
     this.addDocumentCounts()
     this.interface.updateDimensions()
-
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
 
     this.pivotChart.restartChart()

@@ -342,7 +342,6 @@ BarChart.prototype.addScales = function () {
 BarChart.prototype.setBarWidth = function () {
   const barsRegion = this.layout.width - this.layout.margin.left - this.layout.margin.right
   this.barWidth = barsRegion / this.data.size
-  // console.log(this.barWidth)
   this.barWidth = 2
 }
 

@@ -31,7 +31,6 @@ BarChart.prototype.draw = function () {
   this.setRolledData()
   this.setData()
   this.setCounts()
-  this.setClosingPrice()
 
   this.addIntervalFilter()
 
@@ -71,7 +70,6 @@ BarChart.prototype.setRolledData = function () {
       const random_num = 1 + Math.random() * 2;
       return {
         length: v.length,
-        closing_price: random_num.toFixed(2),
         bundle: v,
       };
     },
@@ -321,9 +319,6 @@ BarChart.prototype.setCounts = function () {
   this.counts = [...this.data.values()].map((d) => d.length);
 }
 
-BarChart.prototype.setClosingPrice = function () {
-  this.closingPrice = [...this.data.values()].map((d) => d.closing_price);
-}
 
 BarChart.prototype.addScales = function () {
   const allDataKeys = [...this.data.keys()]

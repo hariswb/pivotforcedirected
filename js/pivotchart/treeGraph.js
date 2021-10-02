@@ -282,6 +282,7 @@ TreeGraph.prototype.updateTreeVisibility = function (params) {
             return d.groupNames[index] === k.val
         }) ? "none" : "block"
     })
+
     this.treeLabel.style("display", function (d) {
         return branchExcluded.some(k => {
             const index = _this.app.groupBy.indexOf(k.dimension)

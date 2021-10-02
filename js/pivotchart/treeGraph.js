@@ -345,7 +345,8 @@ TreeGraph.prototype.updateTreeLabel = function () {
             return _this.baseTriangle(d.r) * 2
         })
         .style("font-size", (d) => {
-            const multiplier = Math.floor(d.name.length / 18) + 1;
+            const length = d.name ? d.name.length : 0
+            const multiplier = Math.floor(length / 18) + 1;
             return `${d.r / (2.5 * multiplier)}px`;
         });
 }

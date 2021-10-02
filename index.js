@@ -3,7 +3,6 @@ let App = function (rawData) {
     this.data = null
     this.keys = Object.keys(this.rawData[0]).filter((d) => d !== "type");
 
-    this.dataRange = { start: null, end: null }
 
     this.groupBy = ["emotion", "site_type", "country"]//[this.keys[0],]; // Set default hiearchy attribute
 
@@ -162,14 +161,11 @@ App.prototype.prepareData = function () {
         _this.rawData[i].date_string = date.toDateString();
     });
 
-    this.dataRange.start = d3.min(this.rawData.map(d => new Date(d.date_string)))
-    this.dataRange.end = d3.max(this.rawData.map(d => new Date(d.date_string)))
-
-    this.rawData = this.getUniquesBy(this.rawData, "url")
+    // this.rawData = this.getUniquesBy(this.rawData, "url")
 }
 
 App.prototype.updateApp = function () {
-    this.data = this.filterByDate(this.rawData, this.dataRange)
+    this.data = this.filterByDate(this.rawData, this.barChart.dataRange)
 
     this.setDimensionCounts()
 

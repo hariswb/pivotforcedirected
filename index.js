@@ -3,8 +3,7 @@ let App = function (rawData) {
     this.data = null
     this.keys = Object.keys(this.rawData[0]).filter((d) => d !== "type");
 
-
-    this.groupBy = ["emotion", "site_type", "country"]//[this.keys[0],]; // Set default hiearchy attribute
+    this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
 
     this.extras = [];
 
@@ -156,9 +155,9 @@ App.prototype.prepareData = function () {
             _this.rawData[i]["type"] = "main";
         });
 
-        const date = new Date(node.publish_date);
-        _this.rawData[i].date_published = date;
-        _this.rawData[i].date_string = date.toDateString();
+        // const date = new Date(node.publish_date);
+        // _this.rawData[i].date_published = date;
+        // _this.rawData[i].date_string = date.toDateString();
     });
 
     // this.rawData = this.getUniquesBy(this.rawData, "url")
@@ -210,7 +209,7 @@ App.prototype.filterByDate = function (data, range) {
     let end = range.end.getTime()
 
     return data.filter(function (d) {
-        let nodeDate = new Date(d.date_string).getTime()
+        let nodeDate = new Date(d.publish_date).getTime()
         return start <= nodeDate && nodeDate <= end
     })
 }

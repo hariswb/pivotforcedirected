@@ -2,6 +2,15 @@ let BarChart = function (app) {
   this.layout = {}
   this.app = app
 
+  this.constants = {
+    TIME: "time",
+    ORDINAL: "ordinal",
+  }
+
+  this.selectedDimension = "publish_date"
+  this.selectedScale = "time"
+
+
   this.setup()
   this.draw()
 }
@@ -14,7 +23,9 @@ BarChart.prototype.setup = function () {
 
   this.addBg()
 
-  this.addChartTitle()
+  // this.addChartTitle()
+  this.barDimension = this.layerBarChart.append("g")
+  this.barScale = this.layerBarChart.append("g")
 
   this.bars = this.layerBarChart.append("g")
   this.maskBars = this.layerBarChart.append("g")
@@ -25,12 +36,95 @@ BarChart.prototype.setup = function () {
   this.radioSelection = this.layerBarChart.append("g").attr("class", "radioselection")
   this.brushFilter = this.layerBarChart.append("g")
   this.brushTip = this.layerBarChart.append("g")
+
+  this.addBarDimensionSelection()
+  this.addBarScaleSelection()
 }
 
-BarChart.prototype.draw = function () {
-  // this.scaleTime("date_string")
-  this.scaleOrdinal("country")
 
+BarChart.prototype.addBarDimensionSelection = function () {
+  const _this = this
+  this.barDimensionSelect = this.barDimension
+    .attr("class", "bar-dimension")
+    .append("foreignObject")
+    .attr("class", "bar-dimension-fo")
+    .style("cursor", "pointer")
+    .attr("width", 150)
+    .attr("height", 20)
+    .attr("x", 20)
+    .attr("y", 20)
+    .append("xhtml:div")
+    .attr("class", "bar-dimension-div")
+    .append("select")
+    .attr("id", "bar-dimension-select")
+    .attr("class", "bar-dimension-select")
+    .attr("name", "bar-dimension")
+    .on("change", function (event) {
+      _this.selectedDimension = d3.select(this).property("value")
+      _this.draw()
+    })
+
+  this.barDimensionOptions = this.barDimensionSelect.selectAll("option")
+    .data(this.app.keys)
+    .join(enter => enter.append("option")
+      .attr("value", d => d)
+      .each(function (d) {
+        if (d === _this.selectedDimension) {
+          d3.select(this).attr("selected", "")
+        }
+      })
+      .html(d => d)
+    )
+
+}
+
+BarChart.prototype.addBarScaleSelection = function () {
+  const _this = this
+  this.barScaleSelect = this.barScale
+    .attr("class", "bar-scale")
+    .append("foreignObject")
+    .attr("class", "bar-scale-fo")
+    .style("cursor", "pointer")
+    .attr("width", 150)
+    .attr("height", 20)
+    .attr("x", 170)
+    .attr("y", 20)
+    .append("xhtml:div")
+    .attr("class", "bar-scale-div")
+    .append("select")
+    .attr("id", "bar-scale-select")
+    .attr("class", "bar-scale-select")
+    .attr("name", "bar-scale")
+    .on("change", function (event) {
+      _this.selectedScale = d3.select(this).property("value")
+      _this.draw()
+    })
+
+  this.barScaleOptions = this.barScaleSelect.selectAll("option")
+    .data(Object.values(this.constants))
+    .join(enter => enter.append("option").attr("value", d => d).html(d => d))
+}
+
+BarChart.prototype.setScale = function () {
+  const _this = this
+  switch (this.selectedScale) {
+    case this.constants.TIME:
+      if (this.selectedDimension === "publish_date") {
+        this.scaleTime(this.selectedDimension)
+        break;
+      };
+    case this.constants.ORDINAL:
+      this.scaleOrdinal(this.selectedDimension)
+      break;
+    default:
+      this.scaleOrdinal(this.selectedDimension)
+      break;
+  }
+}
+
+
+BarChart.prototype.draw = function () {
+  this.setScale()
   this.setData()
 
   this.addBars()
@@ -53,9 +147,16 @@ BarChart.prototype.scaleTime = function (keyDimension) {
   this.createScale = (allDataKeys) => d3
     .scaleTime()
     .domain([d3.min(allDataKeys), d3.max(allDataKeys)])
+  this.getBarwidth = () => {
+    // const barsRegion = this.layout.width - this.layout.margin.left - this.layout.margin.right
+    // this.barWidth = barsRegion / this.data.size
+    return 2
+  }
+  this.getBaroffset = () => this.barWidth / 4
 }
 
 BarChart.prototype.scaleOrdinal = function (keyDimension) {
+  const _this = this
   this.dataRange = {
     start: d3.min(this.app.rawData.map(d => d[keyDimension])),
     end: d3.max(this.app.rawData.map(d => d[keyDimension]))
@@ -67,12 +168,19 @@ BarChart.prototype.scaleOrdinal = function (keyDimension) {
   this.createScale = (allDataKeys) => d3
     .scaleBand()
     .domain(allDataKeys)
+    .paddingInner(0.2)
+    .paddingOuter(0.2)
+
+  this.getBarwidth = () => {
+    return _this.x.bandwidth()
+  }
+
+  this.getBaroffset = () => 0
 }
 
 // Scale coupled components
 
 BarChart.prototype.setData = function () {
-  console.log(this.app.rawData)
   this.rolledData = d3.rollup(
     this.app.rawData,
     (v) => {
@@ -247,18 +355,17 @@ BarChart.prototype.addBars = function () {
     .domain([0, d3.max(this.counts)])
     .range([this.layout.height - this.layout.margin.top - this.layout.margin.bottom, 0]);
 
-  const barsRegion = this.layout.width - this.layout.margin.left - this.layout.margin.right
-  this.barWidth = barsRegion / this.data.size
-  this.barWidth = 2
+
+  this.barWidth = this.getBarwidth()
+  this.barOffset = this.getBaroffset()
 
   const axisBottom = d3.axisBottom(this.x).ticks(6)//.tickFormat(d3.timeFormat("%b/%d"));
+  const axisLeft = d3.axisLeft(this.y).ticks(4);
 
   this.xAxis
     .attr("id", "xAxis")
     .call(axisBottom)
     .style("color", this.layout.textColor);
-
-  const axisLeft = d3.axisLeft(this.y).ticks(4);
 
   this.yAxis
     .attr("id", "yAxis")
@@ -275,11 +382,11 @@ BarChart.prototype.addBars = function () {
     .join("rect")
     .attr("id", "bars")
     .attr("fill", this.layout.barFill)
-    .attr("x", ([key, val]) => _this.x(key) - _this.barWidth / 2)
+    .attr("x", ([key, val]) => _this.x(key) - _this.barOffset)
     .attr("y", function ([key, val]) {
       return _this.layout.margin.top + _this.y(val.length)
     })
-    .attr("width", this.barWidth)
+    .attr("width", _this.barWidth)
     .attr("height", function ([key, val]) {
       return _this.y(0) - _this.y(val.length);
     })
@@ -379,7 +486,7 @@ BarChart.prototype.addTransform = function () {
 
   this.bars.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.xAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`)
-  this.yAxis.attr("transform", `translate(${this.layout.margin.left - this.barWidth * 2},${this.layout.margin.top})`)
+  this.yAxis.attr("transform", `translate(${this.layout.margin.left * 0.8},${this.layout.margin.top})`)
   this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.radioSelection.attr("transform", `translate(${this.layout.width - this.layout.margin.right},${this.layout.height / 3})`)

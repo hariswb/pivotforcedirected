@@ -115,6 +115,12 @@ BarChart.prototype.setScale = function () {
       };
     case this.constants.ORDINAL:
       this.scaleOrdinal(this.selectedDimension)
+      this.barScaleOptions.each(function (d) {
+        if (d === _this.constants.ORDINAL) {
+          d3.select(this).attr("selected", "")
+        }
+      })
+
       break;
     default:
       this.scaleOrdinal(this.selectedDimension)

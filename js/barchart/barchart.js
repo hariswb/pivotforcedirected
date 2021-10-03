@@ -10,7 +10,6 @@ let BarChart = function (app) {
   this.selectedDimension = "publish_date"
   this.selectedScale = "time"
 
-
   this.setup()
   this.draw()
 }
@@ -120,7 +119,6 @@ BarChart.prototype.setScale = function () {
           d3.select(this).attr("selected", "")
         }
       })
-
       break;
     default:
       this.scaleOrdinal(this.selectedDimension)
@@ -147,7 +145,10 @@ BarChart.prototype.scaleTime = function (keyDimension) {
     end: d3.max(this.app.rawData.map(d => new Date(d[keyDimension])))
   }
 
-  this.rollupKey = (d) => new Date(d[keyDimension])
+  this.rollupKey = (d) => {
+    const date = new Date(d[keyDimension]).toDateString()
+    return new Date(date)
+  }
   this.brushFilterInterval = d3.timeHour.every(24)
   this.brushTipFormat = d3.timeFormat("%b/%d")
   this.createScale = (allDataKeys) => d3
@@ -198,6 +199,7 @@ BarChart.prototype.setData = function () {
     },
     (d) => this.rollupKey(d)
   )
+  console.log(this.app.rawData)
   this.data = this.rolledData
 }
 

@@ -128,7 +128,6 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
                     _this.app.updateDocumentExcluded(event.type + "-cleared", keyName, d.content, d.show)
                     d.triggered = false
                 }
-
                 d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
             })
         )

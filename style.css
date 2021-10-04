@@ -584,3 +584,14 @@ align-items: center;
   align-items: center;
 }
 
+/*Bar chart select dimension and scale  */
+.bar-dimension-select{
+  background-color: #ddd;
+  height: 20px;
+}
+
+.bar-dimension-select option{
+  margin: 20px;
+  height: 20px;
+  background-color: yellow;
+}

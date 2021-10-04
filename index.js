@@ -1,5 +1,8 @@
 let App = function (rawData) {
-    this.rawData = rawData
+    this.rawData = this.testNumber(rawData)
+
+    this.rawData
+
     this.data = null
     this.keys = Object.keys(this.rawData[0]).filter((d) => d !== "type");
 
@@ -31,6 +34,15 @@ let App = function (rawData) {
 
     this.interface.updateInterfaceColor(this.pivotChart.treeGraph.treeColors)
     this.handleDarkMode()
+}
+
+App.prototype.testNumber = function (rawData) {
+    rawData.forEach(d => {
+        const rand = Math.random() * 100
+        d.num = rand.toFixed(2)
+    })
+
+    return rawData
 }
 
 App.prototype.addLoading = function () {
@@ -164,7 +176,7 @@ App.prototype.prepareData = function () {
 }
 
 App.prototype.updateApp = function () {
-    this.data = this.filterByDate(this.rawData, this.barChart.dataRange)
+    this.data = this.filterBarchart(this.rawData, this.barChart.dataRange)
 
     this.setDimensionCounts()
 
@@ -204,15 +216,41 @@ App.prototype.updateDocumentList = function ({ group, groupNames }) {
     this.documentList.render(payload)
 }
 
-App.prototype.filterByDate = function (data, range) {
-    let start = range.start.getTime()
-    let end = range.end.getTime()
+App.prototype.filterBarchart = function (data, range) {
+    const _this = this
+    let newData = null
+    if (this.barChart.selectedScale === this.barChart.constants.TIME) {
+        newData = filterByDate(data, range)
+    }
+    else if (this.barChart.selectedScale === this.barChart.constants.LINEAR) {
+        newData = filterByNumber(data, range)
+    } else {
+        newData = data
+    }
 
-    return data.filter(function (d) {
-        let nodeDate = new Date(d.publish_date).getTime()
-        return start <= nodeDate && nodeDate <= end
-    })
+    function filterByNumber(data, range) {
+        let start = range.start
+        let end = range.end
+
+        return data.filter(function (d) {
+            const nodeVal = d[_this.barChart.selectedDimension]
+            return start <= nodeVal && nodeVal <= end
+        })
+    }
+
+    function filterByDate(data, range) {
+        let start = range.start.getTime()
+        let end = range.end.getTime()
+
+        return data.filter(function (d) {
+            let nodeDate = new Date(d[_this.barChart.selectedDimension]).getTime()
+            return start <= nodeDate && nodeDate <= end
+        })
+    }
+
+    return newData
 }
+
 
 App.prototype.addDocumentCounts = function () {
     let _this = this

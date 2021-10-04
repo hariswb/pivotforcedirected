@@ -5,7 +5,10 @@ let BarChart = function (app) {
   this.constants = {
     TIME: "time",
     ORDINAL: "ordinal",
+    LINEAR: "linear"
   }
+
+  this.dimensionScales = new Map()
 
   this.selectedDimension = "publish_date"
   this.selectedScale = "time"
@@ -36,35 +39,90 @@ BarChart.prototype.setup = function () {
   this.brushFilter = this.layerBarChart.append("g")
   this.brushTip = this.layerBarChart.append("g")
 
+  this.getDimensionScales()
   this.addBarDimensionSelection()
-  this.addBarScaleSelection()
+  // this.addBarScaleSelection()
+}
+
+BarChart.prototype.draw = function () {
+  this.setScale()
+  this.setData()
+
+  this.addBars()
+
+  this.addFilterTools()
+
+  this.addTransform()
+}
+
+BarChart.prototype.addFilterTools = function () {
+  this.brushFilter.select("g").remove()
+  this.brushTip.selectAll("text").remove()
+  this.radioSelection.selectAll("foreignObject").remove()
+
+  switch (this.selectedScale) {
+    case this.constants.TIME:
+      this.addBrushFilter()
+      this.addBrushTip()
+      this.addIntervalFilter()
+      break;
+    case this.constants.LINEAR:
+      this.addBrushFilter()
+      this.addBrushTip()
+      break;
+
+    default:
+      break;
+  }
+
+}
+
+BarChart.prototype.getDimensionScales = function () {
+  const _this = this
+  this.app.keys.forEach(key => {
+    const scales = [_this.constants.ORDINAL]
+    const numberTest = [_this.constants.LINEAR, _this.app.rawData.every(d => checkNumber(d[key]))]
+    const dateTest = [_this.constants.TIME, _this.app.rawData.every(d => checkDate(d[key]))]
+    const tests = [numberTest, dateTest]
+
+    tests.forEach(([scale, testResult]) => {
+      if (testResult === true) {
+        scales.push(scale)
+      }
+    })
+
+    _this.dimensionScales.set(key, scales)
+  });
+
+  function checkDate(val) {
+    const date = new Date(val)
+    return date instanceof Date && !isNaN(date)
+  }
+
+  function checkNumber(val) {
+    return !isNaN(val) && !isNaN(parseFloat(val))
+  }
+}
+
+BarChart.prototype.addDimensionScales = function () {
 }
 
 
 BarChart.prototype.addBarDimensionSelection = function () {
   const _this = this
-  this.barDimensionSelect = this.barDimension
-    .attr("class", "bar-dimension")
-    .append("foreignObject")
-    .attr("class", "bar-dimension-fo")
-    .style("cursor", "pointer")
-    .attr("width", 150)
-    .attr("height", 20)
-    .attr("x", 20)
-    .attr("y", 20)
-    .append("xhtml:div")
-    .attr("class", "bar-dimension-div")
-    .append("select")
-    .attr("id", "bar-dimension-select")
-    .attr("class", "bar-dimension-select")
-    .attr("name", "bar-dimension")
+
+  this.barDimensionSelect = createSelect(this.barDimension, "dimension")
     .on("change", function (event) {
       _this.selectedDimension = d3.select(this).property("value")
+      const scales = _this.dimensionScales.get(_this.selectedDimension)
+      _this.selectedScale = scales.some(d => d !== _this.constants.ORDINAL) ? scales.filter(d => d !== _this.constants.ORDINAL)[0] : _this.constants.ORDINAL
+      createScaleOptions()
       _this.draw()
+      _this.app.updateApp()
     })
 
   this.barDimensionOptions = this.barDimensionSelect.selectAll("option")
-    .data(this.app.keys)
+    .data([...this.dimensionScales.keys()], d => d)
     .join(enter => enter.append("option")
       .attr("value", d => d)
       .each(function (d) {
@@ -75,50 +133,58 @@ BarChart.prototype.addBarDimensionSelection = function () {
       .html(d => d)
     )
 
-}
+  this.barScaleSelect = createSelect(this.barScale, "scale")
+  createScaleOptions()
 
-BarChart.prototype.addBarScaleSelection = function () {
-  const _this = this
-  this.barScaleSelect = this.barScale
-    .attr("class", "bar-scale")
-    .append("foreignObject")
-    .attr("class", "bar-scale-fo")
-    .style("cursor", "pointer")
-    .attr("width", 150)
-    .attr("height", 20)
-    .attr("x", 170)
-    .attr("y", 20)
-    .append("xhtml:div")
-    .attr("class", "bar-scale-div")
-    .append("select")
-    .attr("id", "bar-scale-select")
-    .attr("class", "bar-scale-select")
-    .attr("name", "bar-scale")
-    .on("change", function (event) {
+  function createScaleOptions() {
+    _this.barScaleSelect.on("change", function (event) {
       _this.selectedScale = d3.select(this).property("value")
       _this.draw()
+      _this.app.updateApp()
     })
+    _this.barScaleOptions = _this.barScaleSelect.selectAll("option")
+      .data(_this.dimensionScales.get(_this.selectedDimension), d => d)
+      .join(enter => enter.append("option").attr("value", d => d).html(d => d)
+        .each(function (d) {
+          if (d === _this.selectedScale) {
+            d3.select(this).attr("selected", "")
+          }
+        }, update => update
+          ,
+          exit => exit.remove())
+      )
+  }
 
-  this.barScaleOptions = this.barScaleSelect.selectAll("option")
-    .data(Object.values(this.constants))
-    .join(enter => enter.append("option").attr("value", d => d).html(d => d))
+  function createSelect(g, name) {
+    return g.attr("class", `bar-${name}`)
+      .append("foreignObject")
+      .attr("class", `bar-${name}-fo`)
+      .style("cursor", "pointer")
+      .attr("width", 150)
+      .attr("height", 20)
+      .attr("x", 0)
+      .attr("y", 0)
+      .append("xhtml:div")
+      .attr("class", `bar-${name}-div`)
+      .append("select")
+      .attr("id", `bar-${name}-select`)
+      .attr("class", `bar-${name}-select`)
+      .attr("name", `bar-${name}`)
+  }
 }
+
 
 BarChart.prototype.setScale = function () {
   const _this = this
   switch (this.selectedScale) {
     case this.constants.TIME:
-      if (this.selectedDimension === "publish_date") {
-        this.scaleTime(this.selectedDimension)
-        break;
-      };
+      this.scaleTime(this.selectedDimension)
+      break;
     case this.constants.ORDINAL:
       this.scaleOrdinal(this.selectedDimension)
-      this.barScaleOptions.each(function (d) {
-        if (d === _this.constants.ORDINAL) {
-          d3.select(this).attr("selected", "")
-        }
-      })
+      break;
+    case this.constants.LINEAR:
+      this.scaleLinear(this.selectedDimension)
       break;
     default:
       this.scaleOrdinal(this.selectedDimension)
@@ -127,38 +193,42 @@ BarChart.prototype.setScale = function () {
 }
 
 
-BarChart.prototype.draw = function () {
-  this.setScale()
-  this.setData()
-
-  this.addBars()
-
-  // this.addBrushFilter()
-  // this.addBrushTip()
-
-  this.addTransform()
-}
-
 BarChart.prototype.scaleTime = function (keyDimension) {
   this.dataRange = {
-    start: d3.min(this.app.rawData.map(d => new Date(d[keyDimension]))),
-    end: d3.max(this.app.rawData.map(d => new Date(d[keyDimension])))
+    start: d3.min(this.app.rawData.map(d => {
+      return new Date(new Date(d[keyDimension]).toDateString())
+    })),
+    end: d3.max(this.app.rawData.map(d => {
+      return new Date(new Date(d[keyDimension]).toDateString())
+    })),
   }
 
   this.rollupKey = (d) => {
     const date = new Date(d[keyDimension]).toDateString()
     return new Date(date)
   }
-  this.brushFilterInterval = d3.timeHour.every(24)
+  this.brushFilterInterval = d3.timeHour.every(24).round
   this.brushTipFormat = d3.timeFormat("%b/%d")
   this.createScale = (allDataKeys) => d3
     .scaleTime()
     .domain([d3.min(allDataKeys), d3.max(allDataKeys)])
-  this.getBarwidth = () => {
-    // const barsRegion = this.layout.width - this.layout.margin.left - this.layout.margin.right
-    // this.barWidth = barsRegion / this.data.size
-    return 2
+  this.getBarwidth = () => 2
+  this.getBaroffset = () => this.barWidth / 4
+}
+
+BarChart.prototype.scaleLinear = function (keyDimension) {
+  this.dataRange = {
+    start: d3.min(this.app.rawData.map(d => d[keyDimension])),
+    end: d3.max(this.app.rawData.map(d => d[keyDimension]))
   }
+
+  this.rollupKey = (d) => d[keyDimension]
+  this.brushFilterInterval = (d) => Math.floor(d)
+  this.brushTipFormat = d => d
+  this.createScale = (allDataKeys) => d3
+    .scaleLinear()
+    .domain([d3.min(allDataKeys), d3.max(allDataKeys)])
+  this.getBarwidth = () => 2
   this.getBaroffset = () => this.barWidth / 4
 }
 
@@ -170,8 +240,8 @@ BarChart.prototype.scaleOrdinal = function (keyDimension) {
   }
 
   this.rollupKey = (d) => d[keyDimension]
-  this.brushFilterInterval = d3.timeHour.every(24)
-  this.brushTipFormat = d3.timeFormat("%b/%d")
+  // this.brushFilterInterval = d3.timeHour.every(24)
+  // this.brushTipFormat = d3.timeFormat("%b/%d")
   this.createScale = (allDataKeys) => d3
     .scaleBand()
     .domain(allDataKeys)
@@ -199,7 +269,6 @@ BarChart.prototype.setData = function () {
     },
     (d) => this.rollupKey(d)
   )
-  console.log(this.app.rawData)
   this.data = this.rolledData
 }
 
@@ -249,9 +318,10 @@ BarChart.prototype.addIntervalFilter = function (params) {
           d3.selectAll(".radio-selection-fo").attr("x", 5)
           d3.select(this).attr('x', 0)
 
-          _this.draw()
-          _this.app.updateApp()
+          // _this.draw()
+          _this.addBrushFilter()
           _this.updateBrushTip()
+          _this.app.updateApp()
         })
 
         .append("xhtml:div")
@@ -281,7 +351,8 @@ BarChart.prototype.addBrushFilter = function () {
     .extent([[brushSize.x1, brushSize.y1], [brushSize.x2, brushSize.y2]])
     .on("end", brushing);
 
-  this.brushFilter
+  this.brushFilter.select("g").remove()
+  this.brushFilter.attr("class", "brush-filter").append("g")
     .call(brush)
     .call(brush.move, [brushSize.x1, brushSize.x2]).attr(
       "transform", `translate(${0},${0})`
@@ -293,7 +364,7 @@ BarChart.prototype.addBrushFilter = function () {
 
     if (!event.sourceEvent || !selection) return;
 
-    const [x0, x1] = selection.map(d => interval.round(_this.x.invert(d)));
+    const [x0, x1] = selection.map(d => interval(_this.x.invert(d)));
 
     d3.select(this)
       .transition()
@@ -428,17 +499,15 @@ BarChart.prototype.addMaskBars = function () {
 }
 
 BarChart.prototype.addTransform = function () {
-  this.app.svg2.attr(
-    "transform",
-    `translate(${window.innerWidth * 0.55},${0})`
-  );
-
+  this.app.svg2.attr("transform", `translate(${window.innerWidth * 0.55},${0})`);
   this.bars.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.xAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`)
-  this.yAxis.attr("transform", `translate(${this.layout.margin.left - this.barWidth * 2},${this.layout.margin.top})`)
+  this.yAxis.attr("transform", `translate(${this.layout.margin.left * 0.8},${this.layout.margin.top})`)
   this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.radioSelection.attr("transform", `translate(${this.layout.width - this.layout.margin.right},${this.layout.height / 3})`)
+  this.barDimension.attr("transform", `translate(${this.layout.margin.left * 0.2},${this.layout.margin.top * 0.2})`)
+  this.barScale.attr("transform", `translate(${this.layout.margin.left * 0.2 + 150},${this.layout.margin.top * 0.2})`)
 
 }
 
@@ -486,20 +555,6 @@ BarChart.prototype.addMaskBars = function () {
     .attr("clip-path", "url(#maskBars)")
 }
 
-BarChart.prototype.addTransform = function () {
-  this.app.svg2.attr(
-    "transform",
-    `translate(${window.innerWidth * 0.55},${0})`
-  );
-
-  this.bars.attr("transform", `translate(${this.layout.margin.left},${0})`)
-  this.xAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`)
-  this.yAxis.attr("transform", `translate(${this.layout.margin.left * 0.8},${this.layout.margin.top})`)
-  this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
-  this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
-  this.radioSelection.attr("transform", `translate(${this.layout.width - this.layout.margin.right},${this.layout.height / 3})`)
-
-}
 
 BarChart.prototype.addChartTitle = function () {
   this.layerBarChart

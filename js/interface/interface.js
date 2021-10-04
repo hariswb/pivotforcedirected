@@ -131,7 +131,6 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
 
                 d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
             })
-
         )
 
     button.on("click", function (event, d) {

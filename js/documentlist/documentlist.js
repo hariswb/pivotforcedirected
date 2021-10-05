@@ -35,10 +35,10 @@ DocumentList.prototype.render = function ({ data, displayState }) {
             (enter) => enter.append("li")
                 .attr("id", (d, i) => `document-li-${i}`)
                 .attr('class', "document-li")
-                .style("background-color", function () {
-                    return _this.layout.liBgColor()
+                .style("background-color", _this.layout.liBgColor())
+                .html(d => {
+                    return elementHtml(d)
                 })
-                .html(d => elementHtml(d))
             ,
             update => update,
             exit => exit.remove()
@@ -76,7 +76,6 @@ DocumentList.prototype.setLayout = function () {
         searchColor: function () { return _this.app.darkMode ? "#fff" : "#ddd" },
     }
 }
-
 
 DocumentList.prototype.elementLayout = function (title) {
 

@@ -1,5 +1,5 @@
 let App = function (rawData) {
-    this.rawData = this.testNumber(rawData)
+    this.rawData = rawData
 
     this.rawData
 
@@ -36,7 +36,7 @@ let App = function (rawData) {
     this.handleDarkMode()
 }
 
-App.prototype.testNumber = function (rawData) {
+App.prototype.addDummbyData = function (rawData) {
     rawData.forEach(d => {
         const rand = Math.random() * 100
         d.num = rand.toFixed(2)
@@ -313,7 +313,7 @@ App.prototype.setDarkMode = function () {
 }
 
 
-d3.json("static/test.json")
+d3.json("static/searchquery56.json")
     .then(function (json) {
         var app = new App(json)
         // console.log(json)

@@ -10,8 +10,8 @@ let BarChart = function (app) {
 
   this.dimensionScales = new Map()
 
-  this.selectedDimension = "publish_date"
-  this.selectedScale = "time"
+  this.selectedDimension = ""
+  this.selectedScale = ""
 
   this.setup()
   this.draw()
@@ -26,8 +26,7 @@ BarChart.prototype.setup = function () {
   this.addBg()
 
   // this.addChartTitle()
-  this.barDimension = this.layerBarChart.append("g")
-  this.barScale = this.layerBarChart.append("g")
+  this.barchartDropdowns = d3.select(".barchart-selections-dropdowns")
 
   this.bars = this.layerBarChart.append("g")
   this.maskBars = this.layerBarChart.append("g")
@@ -41,7 +40,6 @@ BarChart.prototype.setup = function () {
 
   this.getDimensionScales()
   this.addBarDimensionSelection()
-  // this.addBarScaleSelection()
 }
 
 BarChart.prototype.draw = function () {
@@ -94,6 +92,11 @@ BarChart.prototype.getDimensionScales = function () {
     _this.dimensionScales.set(key, scales)
   });
 
+
+  this.selectedDimension = [...this.dimensionScales.keys()][0]
+  this.selectedScale = this.dimensionScales.get(this.selectedDimension)[0]
+
+
   function checkDate(val) {
     const date = new Date(val)
     return date instanceof Date && !isNaN(date)
@@ -104,47 +107,71 @@ BarChart.prototype.getDimensionScales = function () {
   }
 }
 
-BarChart.prototype.addDimensionScales = function () {
-}
-
 
 BarChart.prototype.addBarDimensionSelection = function () {
   const _this = this
 
-  this.barDimensionSelect = createSelect(this.barDimension, "dimension")
-    .on("change", function (event) {
-      _this.selectedDimension = d3.select(this).property("value")
-      const scales = _this.dimensionScales.get(_this.selectedDimension)
-      _this.selectedScale = scales.some(d => d !== _this.constants.ORDINAL) ? scales.filter(d => d !== _this.constants.ORDINAL)[0] : _this.constants.ORDINAL
-      createScaleOptions()
-      _this.draw()
-      _this.app.updateApp()
-    })
+  this.barDimensionDropdown = d3.select(".barchart-dimension-dropdown")
+  this.barDimensionDropdown.selectAll("div").remove()
 
-  this.barDimensionOptions = this.barDimensionSelect.selectAll("option")
+  this.barScaleDropdown = d3.select(".barchart-scale-dropdown")
+  this.barScaleDropdown.selectAll("div").remove()
+
+  this.barDimensionButton = this.barDimensionDropdown.append("div").attr("class", "dropdown-button barchart-dropdown-button")
+    .on("click", function (event) {
+      _this.barDimensionOptions.classed("hide", !_this.barDimensionOptions.node().classList.contains("hide"))
+    })
+  const imageUrl = { arrowDown: "./static/arrow_drop_down_black_24dp.svg", arrowRight: "./static/arrow_right_black_24dp.svg" }
+  const buttonImg = this.barDimensionButton.append("img").attr("class", "dropdown-button-arrow").attr("src", imageUrl.arrowRight)
+  const buttonText = this.barDimensionButton.append("div").attr("class", "dropdown-button-text").html(this.selectedDimension)
+
+  this.barDimensionOptions = this.barDimensionDropdown.append("div")
+    .attr("class", "dropdown-dimension-content barchart-dropdown-contents")
+    .classed("hide", true)
+  this.barDimensionOptions
+    .selectAll("span")
     .data([...this.dimensionScales.keys()], d => d)
-    .join(enter => enter.append("option")
-      .attr("value", d => d)
-      .each(function (d) {
-        if (d === _this.selectedDimension) {
-          d3.select(this).attr("selected", "")
-        }
-      })
+    .join(enter => enter.append("span")
       .html(d => d)
+      .style("cursor", "pointer")
+      .on("click", function (event, d) {
+        _this.selectedDimension = d
+        _this.addBarDimensionSelection()
+
+        const scales = _this.dimensionScales.get(_this.selectedDimension)
+        _this.selectedScale = scales.some(d => d !== _this.constants.ORDINAL) ? scales.filter(d => d !== _this.constants.ORDINAL)[0] : _this.constants.ORDINAL
+
+        createScaleOptions()
+        _this.draw()
+        _this.app.updateApp()
+      })
     )
 
-  this.barScaleSelect = createSelect(this.barScale, "scale")
   createScaleOptions()
 
   function createScaleOptions() {
-    _this.barScaleSelect.on("change", function (event) {
-      _this.selectedScale = d3.select(this).property("value")
-      _this.draw()
-      _this.app.updateApp()
-    })
-    _this.barScaleOptions = _this.barScaleSelect.selectAll("option")
+    _this.barScaleDropdown.selectAll("div").remove()
+    _this.barScaleButton = _this.barScaleDropdown.append("div").attr("class", "dropdown-button barchart-dropdown-button")
+      .on("click", function (event) {
+        _this.barScaleOptions.classed("hide", !_this.barScaleOptions.node().classList.contains("hide"))
+      })
+    const imageUrl = { arrowDown: "./static/arrow_drop_down_black_24dp.svg", arrowRight: "./static/arrow_right_black_24dp.svg" }
+    const buttonImg = _this.barScaleButton.append("img").attr("class", "dropdown-button-arrow").attr("src", imageUrl.arrowRight)
+    const buttonText = _this.barScaleButton.append("div").attr("class", "dropdown-button-text").html(_this.selectedScale)
+
+    _this.barScaleOptions = _this.barScaleDropdown.append("div")
+      .attr("class", "dropdown-dimension-content barchart-dropdown-contents")
+      .classed("hide", true)
+
+    _this.barScaleOptions
+      .selectAll("span")
       .data(_this.dimensionScales.get(_this.selectedDimension), d => d)
-      .join(enter => enter.append("option").attr("value", d => d).html(d => d)
+      .join(enter => enter.append("span").style("cursor", "pointer").html(d => d)
+        .on("click", function (event, d) {
+          _this.selectedScale = d
+          _this.draw()
+          _this.app.updateApp()
+        })
         .each(function (d) {
           if (d === _this.selectedScale) {
             d3.select(this).attr("selected", "")
@@ -155,22 +182,6 @@ BarChart.prototype.addBarDimensionSelection = function () {
       )
   }
 
-  function createSelect(g, name) {
-    return g.attr("class", `bar-${name}`)
-      .append("foreignObject")
-      .attr("class", `bar-${name}-fo`)
-      .style("cursor", "pointer")
-      .attr("width", 150)
-      .attr("height", 20)
-      .attr("x", 0)
-      .attr("y", 0)
-      .append("xhtml:div")
-      .attr("class", `bar-${name}-div`)
-      .append("select")
-      .attr("id", `bar-${name}-select`)
-      .attr("class", `bar-${name}-select`)
-      .attr("name", `bar-${name}`)
-  }
 }
 
 
@@ -500,14 +511,15 @@ BarChart.prototype.addMaskBars = function () {
 
 BarChart.prototype.addTransform = function () {
   this.app.svg2.attr("transform", `translate(${window.innerWidth * 0.55},${0})`);
+  this.barchartDropdowns
+    .style("top", `${this.layout.margin.top * 0.2}px`)
+    .style("left", `${window.innerWidth * 0.55}px`)
   this.bars.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.xAxis.attr("transform", `translate(${this.layout.margin.left},${this.layout.height - this.layout.margin.bottom})`)
   this.yAxis.attr("transform", `translate(${this.layout.margin.left * 0.8},${this.layout.margin.top})`)
   this.brushFilter.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.brushTip.attr("transform", `translate(${this.layout.margin.left},${0})`)
   this.radioSelection.attr("transform", `translate(${this.layout.width - this.layout.margin.right},${this.layout.height / 3})`)
-  this.barDimension.attr("transform", `translate(${this.layout.margin.left * 0.2},${this.layout.margin.top * 0.2})`)
-  this.barScale.attr("transform", `translate(${this.layout.margin.left * 0.2 + 150},${this.layout.margin.top * 0.2})`)
 
 }
 

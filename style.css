@@ -139,12 +139,13 @@ body:-webkit-full-screen {
   background-color: inherit;
   border: 0px solid black;
   border-radius: 2px;
-  padding: 7.5px;
+  padding: 6px;
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: left;
   align-items: center;
 }
+
 
 .dropdown-dimension-content{
   position: absolute; 
@@ -168,11 +169,14 @@ body:-webkit-full-screen {
   display: block;
   padding-left: 17px;
   margin-top: 5px;
-  /* margin-bottom: 5px; */
-  /* overflow: hidden; */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.dropdown-button-text{
+  margin: 0px;
+  padding: 0px;
 }
 
 .dropdown-button-arrow {
@@ -183,6 +187,47 @@ body:-webkit-full-screen {
   pointer-events: none;
 }
 
+/*Bar chart select dimension and scale  */
+.barchart-selections-dropdowns{
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: start;
+  width: 500px;
+  font-size: 14px;
+}
+
+.barchart-dropdown-button{
+  background-color: #eee;
+}
+
+.dropdown-button-text{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barchart-dimension-dropdown{
+  width: 120px;
+  margin-right: 10px;
+  padding:0px;
+}
+
+.barchart-scale-dropdown{
+  width: 120px;
+  margin-left: 10px;
+  padding:0px;
+}
+
+.barchart-dropdown-contents{
+  position: static;
+}
+
+.hide{
+  display: none;
+}
 
 /* Document List */
 
@@ -584,9 +629,6 @@ align-items: center;
   align-items: center;
 }
 
-/*Bar chart select dimension and scale  */
-.bar-dimension-select{
-}
 
-.bar-dimension-select option{
-}
+
+

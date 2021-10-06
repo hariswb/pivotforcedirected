@@ -93,6 +93,7 @@ PivotChart.prototype.updateChartExtra = function () {
     this.mainGraph.updateExtra()
     this.mainGraph.clearColoring()
     this.treeGraph.updateTreeVisibility()
+    this.mainGraph.updateMainHulls()
 }
 
 PivotChart.prototype.distance = function (xLength, yLength) {
@@ -163,7 +164,7 @@ PivotChart.prototype.addTransform = function () {
     }
 
     function setTransform(g) {
-        const resizeFactor = 3
+        const resizeFactor = 2.2
 
         const rootX = _this.treeGraph.treePositions.rootX ? _this.treeGraph.treePositions.rootX : 0
         const rootY = _this.treeGraph.treePositions.rootY ? _this.treeGraph.treePositions.rootY : 0

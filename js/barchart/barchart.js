@@ -510,7 +510,7 @@ BarChart.prototype.addMaskBars = function () {
 }
 
 BarChart.prototype.addTransform = function () {
-  this.app.svg2.attr("transform", `translate(${window.innerWidth * 0.55},${0})`);
+  this.app.svg2.attr("transform", `translate(${window.innerWidth * 0.55},${20})`);
   this.barchartDropdowns
     .style("top", `${this.layout.margin.top * 0.2}px`)
     .style("left", `${window.innerWidth * 0.55}px`)

@@ -34,18 +34,18 @@ MainGraph.prototype.startSimulation = function () {
 
         _this.node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
 
-        _this.nodeImage
-            .attr("height", (d) =>
-                d.type === "main"
-                    ? _this.layout.nodeRadius * _this.layout.imageNodeRatio
-                    : _this.layout.extraNodeRadius * _this.layout.imageNodeRatio
-            )
-            .attr("x", (d) =>
-                d.type === "main" ? d.x - nodeImageShift : d.x - extraImageShift
-            )
-            .attr("y", (d) =>
-                d.type === "main" ? d.y - nodeImageShift : d.y - extraImageShift
-            );
+        // _this.nodeImage
+        //     .attr("height", (d) =>
+        //         d.type === "main"
+        //             ? _this.layout.nodeRadius * _this.layout.imageNodeRatio
+        //             : _this.layout.extraNodeRadius * _this.layout.imageNodeRatio
+        //     )
+        //     .attr("x", (d) =>
+        //         d.type === "main" ? d.x - nodeImageShift : d.x - extraImageShift
+        //     )
+        //     .attr("y", (d) =>
+        //         d.type === "main" ? d.y - nodeImageShift : d.y - extraImageShift
+        //     );
 
         _this.mainHulls.attr("d", function (d) {
             return _this.hullPath(d, "main")
@@ -307,23 +307,28 @@ MainGraph.prototype.addHulls = function () {
 }
 
 MainGraph.prototype.updateNodeImage = function () {
-    let nodes = this.pivotChart.nodes
-    let iconUrl = this.iconUrl
+    const _this = this
+    let nodes = this.pivotchart.nodes
+    let iconurl = this.iconurl
     let layout = this.layout
 
 
     this.nodeImage = this.nodeImage
-        .data(nodes)
-        .join("image")
-        .style("pointer-events", "none")
-        .attr("href", function (d) {
-            if (d.type === "main") {
-                return iconUrl.document;
-            } else {
-                return iconUrl[d.extra];
-            }
-        })
-        .attr("filter", layout.imageFilter);
+        .data(this.pivotChart.nodes, d => d.id)
+        .join(
+            enter => enter.append("image")
+                .style("pointer-events", "none")
+                .attr("href", function (d) {
+                    if (d.type === "main") {
+                        return iconUrl.document;
+                    } else {
+                        return iconUrl[d.extra];
+                    }
+                })
+                .attr("filter", layout.imageFilter)
+            , update => update
+            , exit => exit.remove()
+        )
 }
 
 
@@ -352,17 +357,17 @@ MainGraph.prototype.updateMainHulls = function () {
         .attr("stroke", layout.hullStroke)
         .attr("stroke-width", layout.hullStrokeWidth);
 
-    this.nodeImage = this.nodeImage
-        .data(this.pivotChart.nodes)
-        .join("image")
-        .style("pointer-events", "none")
-        .attr("href", function (d) {
-            if (d.type === "main") {
-                return _this.iconUrl.document;
-            }
-            return _this.iconUrl[d.extra];
-        })
-        .attr("filter", this.layout.imageFilter);
+    // this.nodeImage = this.nodeImage
+    //     .data(this.pivotChart.nodes)
+    //     .join("image")
+    //     .style("pointer-events", "none")
+    //     .attr("href", function (d) {
+    //         if (d.type === "main") {
+    //             return _this.iconUrl.document;
+    //         }
+    //         return _this.iconUrl[d.extra];
+    //     })
+    //     .attr("filter", this.layout.imageFilter);
 }
 
 MainGraph.prototype.clearColoring = function () {
@@ -507,18 +512,24 @@ MainGraph.prototype.setMainLinks = function () {
 
 }
 
-MainGraph.prototype.updateNode = function () {
+MainGraph.prototype.updateNode = function (nodes) {
     let _this = this
+
     this.node = this.node
-        .data(_this.pivotChart.nodes, (d) => d.id)
-        .join("circle")
-        .on("click", function (event, d) {
-            return _this.updateColoring(event, d)
-        })
-        .attr("fill", _this.layout.nodeFill)
-        .attr("r", function (d) {
-            return d.type === "main" ? _this.layout.nodeRadius : _this.layout.extraNodeRadius
-        })
+        .data(nodes, (d) => d.id)
+        .join(
+            enter => enter.append("circle")
+                .on("click", function (event, d) {
+                    return _this.updateColoring(event, d)
+                })
+                .attr("fill", _this.layout.nodeFill)
+                .attr("r", function (d) {
+                    return d.type === "main" ? _this.layout.nodeRadius : _this.layout.extraNodeRadius
+                }),
+            update => update,
+            exit => exit.remove()
+
+        )
 }
 
 MainGraph.prototype.updateColoring = function (event, d) {
@@ -583,18 +594,20 @@ MainGraph.prototype.updateLink = function () {
 MainGraph.prototype.updateNodeVisibility = function () {
     const _this = this
 
-    let documentExcludedIds = []
-    this.app.documentExcluded.forEach(({ dimension, val }) => {
-        documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
-    })
+    // let documentExcludedIds = []
+    // this.app.documentExcluded.forEach(({ dimension, val }) => {
+    //     documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
+    // })
 
-    this.node
-        .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
-    this.nodeImage
-        .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
+    // console.log(documentExcludedIds)
+
+    // this.node
+    //     .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
+    // this.nodeImage
+    //     .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
 
 
-    const hullExcluded = _this.app.documentExcluded//.map(k => k.val)
+    const hullExcluded = _this.app.documentExcluded
 
     this.mainHulls.attr("display", function (d) {
         return hullExcluded.some(k => {
@@ -608,28 +621,36 @@ MainGraph.prototype.updateNodeVisibility = function () {
 MainGraph.prototype.updateExtra = function () {
     let _this = this
 
-    this.setNodesExtras()
+    // this.setNodesExtras()
 
-    this.pivotChart.nodes = this.pivotChart.nodes.map((node, index) => {
-        obj = node;
-        if (node.type === "main") {
-            obj.id = index;
-        }
-        return obj;
-    });
+    // this.pivotChart.nodes = this.pivotChart.nodes.map((node, index) => {
+    //     obj = node;
+    //     if (node.type === "main") {
+    //         obj.id = index;
+    //     }
+    //     return obj;
+    // });
 
-    this.pivotChart.nodes = this.pivotChart.nodes
-        .filter((node) => node.type === "main"
-        ).concat(this.nodesExtras);
+    // this.pivotChart.nodes = this.pivotChart.nodes
+    //     .filter((node) => node.type === "main"
+    //     ).concat(this.nodesExtras);
+
+    let documentExcludedIds = []
+    this.app.documentExcluded.forEach(({ dimension, val }) => {
+        documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
+    })
+    const nodes = this.pivotChart.nodes.filter(d => !documentExcludedIds.includes(d.id))
 
     this.fociExtra = this.getFociExtra(this.extras);
+    console.log(nodes);
 
-    this.updateNode()
-    this.updateNodeImage()
+    this.updateNode(nodes)
+    // this.updateNodeImage()
 
+    // this.setMainLinks()
+    // this.updateLink()
 
-    this.setMainLinks()
-    this.updateLink()
+    this.simulation.nodes(nodes);
 
     this.simulation
         .force(
@@ -643,39 +664,38 @@ MainGraph.prototype.updateExtra = function () {
             "collideExtra",
             _this.isolateForce(_this.collide(_this.layout.extraNodeRadius * 3.6), "extra")
         )
-        .force(
-            "positionxExtra",
-            _this.isolateForce(
-                _this.posX(
-                    function (d) {
-                        return _this.fociExtra[d.extra].x
-                    },
-                    function (d) {
-                        return 0.1 / _this.fociExtra[d.extra].forceFactor
-                    }
-                ),
-                "extra"
-            )
-        )
-        .force(
-            "positionyExtra",
-            _this.isolateForce(
-                _this.posY(
-                    function (d) {
-                        return _this.fociExtra[d.extra].y
-                    },
-                    function (d) {
-                        return 0.1 / _this.fociExtra[d.extra].forceFactor
-                    }
-                ),
-                "extra"
-            )
-        );
+    // .force(
+    //     "positionxExtra",
+    //     _this.isolateForce(
+    //         _this.posX(
+    //             function (d) {
+    //                 return _this.fociExtra[d.extra].x
+    //             },
+    //             function (d) {
+    //                 return 0.1 / _this.fociExtra[d.extra].forceFactor
+    //             }
+    //         ),
+    //         "extra"
+    //     )
+    // )
+    // .force(
+    //     "positionyExtra",
+    //     _this.isolateForce(
+    //         _this.posY(
+    //             function (d) {
+    //                 return _this.fociExtra[d.extra].y
+    //             },
+    //             function (d) {
+    //                 return 0.1 / _this.fociExtra[d.extra].forceFactor
+    //             }
+    //         ),
+    //         "extra"
+    //     )
+    // );
 
 
-    this.simulation.nodes(this.pivotChart.nodes);
 
-    this.simulation.force("link").links(this.pivotChart.links);
+    // this.simulation.force("link").links(this.pivotChart.links);
 
     this.simulation.alpha(1).restart();
 

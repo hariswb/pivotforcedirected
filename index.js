@@ -6,7 +6,7 @@ let App = function (rawData) {
     this.data = null
     this.keys = Object.keys(this.rawData[0]).filter((d) => d !== "type");
 
-    this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
+    this.groupBy = ["emotion"]//[this.keys[0],]; // Set default hiearchy attribute
 
     this.extras = [];
 
@@ -152,6 +152,19 @@ App.prototype.getUniquesBy = function (data, key) {
 
 App.prototype.prepareData = function () {
     let _this = this
+
+    // let cleanedRawData = []
+    // this.rawData.forEach(function (node, i) {
+    //     const checks = _this.keys.every(key => {
+    //         // console.log(node[key] === null)
+    //         return node[key] !== null
+    //     })
+    //     if (checks === true) {
+    //         cleanedRawData.push(node)
+    //     }
+
+    // })
+    // this.rawData = cleanedRawData
 
     this.rawData.forEach(function (node, i) {
         _this.keys.forEach((k) => {
@@ -313,10 +326,10 @@ App.prototype.setDarkMode = function () {
 }
 
 
-d3.json("static/searchquery56.json")
+// d3.json("static/searchquery56.json")
+d3.json("static/test.json")
     .then(function (json) {
         var app = new App(json)
-        // console.log(json)
     })
     .catch(function (error) {
     });

@@ -75,6 +75,7 @@ PivotChart.prototype.draw = function () {
 
 PivotChart.prototype.restartChart = function () {
     this.setNodes()
+    this.updateNodesExcluded()
     this.updateChart()
 }
 
@@ -90,10 +91,8 @@ PivotChart.prototype.updateChart = function () {
 }
 
 PivotChart.prototype.updateChartExtra = function () {
-    this.mainGraph.updateExtra()
-    this.mainGraph.clearColoring()
-    this.treeGraph.updateTreeVisibility()
-    this.mainGraph.updateMainHulls()
+    this.updateNodesExcluded()
+    this.updateChart()
 }
 
 PivotChart.prototype.distance = function (xLength, yLength) {
@@ -111,6 +110,22 @@ PivotChart.prototype.setNodes = function () {
         obj.type = "main"
         return obj;
     })
+}
+
+PivotChart.prototype.updateNodesExcluded = function () {
+    const _this = this
+    let documentExcludedIds = []
+
+    this.app.documentExcluded.forEach(({ dimension, val }) => {
+        documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
+    })
+
+    const allIds = this.app.data.map(d => d.id)
+    const currentIds = this.nodes.map(d => d.id)
+    const leftIds = allIds.filter(d => !documentExcludedIds.includes(d)).filter(d => !currentIds.includes(d))
+    const leftNodes = this.app.data.filter(d => leftIds.includes(d.id))
+
+    this.nodes = this.nodes.filter(d => !documentExcludedIds.includes(d.id)).concat(leftNodes)
 }
 
 PivotChart.prototype.addBackground = function () {

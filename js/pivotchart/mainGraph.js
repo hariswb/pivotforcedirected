@@ -606,7 +606,6 @@ MainGraph.prototype.updateNodeVisibility = function () {
     // this.nodeImage
     //     .style('display', d => documentExcludedIds.includes(d.id) ? "none" : "block")
 
-
     const hullExcluded = _this.app.documentExcluded
 
     this.mainHulls.attr("display", function (d) {
@@ -635,35 +634,41 @@ MainGraph.prototype.updateExtra = function () {
     //     .filter((node) => node.type === "main"
     //     ).concat(this.nodesExtras);
 
-    let documentExcludedIds = []
-    this.app.documentExcluded.forEach(({ dimension, val }) => {
-        documentExcludedIds = documentExcludedIds.concat(_this.app.data.filter(d => d[dimension] === val).map(d => d.id))
-    })
-    const nodes = this.pivotChart.nodes.filter(d => !documentExcludedIds.includes(d.id))
 
     this.fociExtra = this.getFociExtra(this.extras);
-    console.log(nodes);
 
-    this.updateNode(nodes)
+    this.updateNode(this.pivotChart.nodes)
     // this.updateNodeImage()
 
     // this.setMainLinks()
     // this.updateLink()
 
-    this.simulation.nodes(nodes);
+    this.simulation.nodes(this.pivotChart.nodes);
 
     this.simulation
         .force(
-            "chargeExtra",
+            "charge",
             _this.isolateForce(
-                _this.charge(-_this.layout.extraNodeRadius * 4.5, _this.layout.extraNodeRadius * 4.5),
-                "extra"
+                _this.charge(-_this.layout.nodeRadius * 1.5, _this.layout.nodeRadius * 50),
+                "main"
             )
+
         )
-        .force(
-            "collideExtra",
-            _this.isolateForce(_this.collide(_this.layout.extraNodeRadius * 3.6), "extra")
-        )
+        .force("collide",
+            _this.isolateForce(_this.collide(_this.layout.nodeRadius * 1.1), "main")
+        );
+    // .force(
+    //     "chargeExtra",
+    //     _this.isolateForce(
+    //         _this.charge(-_this.layout.extraNodeRadius * 4.5, _this.layout.extraNodeRadius * 4.5),
+    //         "extra"
+    //     )
+    // )
+    // .force(
+    //     "collideExtra",
+    //     _this.isolateForce(_this.collide(_this.layout.extraNodeRadius * 3.6), "extra")
+    // )
+
     // .force(
     //     "positionxExtra",
     //     _this.isolateForce(

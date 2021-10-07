@@ -72,7 +72,6 @@ BarChart.prototype.addFilterTools = function () {
     default:
       break;
   }
-
 }
 
 BarChart.prototype.getDimensionScales = function () {
@@ -93,9 +92,16 @@ BarChart.prototype.getDimensionScales = function () {
   });
 
 
-  this.selectedDimension = [...this.dimensionScales.keys()][0]
-  this.selectedScale = this.dimensionScales.get(this.selectedDimension)[0]
+  if ([...this.dimensionScales.keys()].includes("publish_date")) {
+    this.selectedDimension = "publish_date"
+    this.selectedScale = this.constants.TIME
 
+  } else {
+    this.selectedDimension = [...this.dimensionScales.keys()][0]
+    this.selectedScale = this.dimensionScales.get(this.selectedDimension)[0]
+
+
+  }
 
   function checkDate(val) {
     const date = new Date(val)

@@ -117,7 +117,8 @@ TreeGraph.prototype.startSimulation = function () {
 
 TreeGraph.prototype.getTreeData = function () {
     let hierarchy = this.pivotChart.app.groupBy;
-    let data = this.pivotChart.app.data
+    // let data = this.pivotChart.app.data
+    let data = this.pivotChart.nodes
     let layout = this.layout
 
     let combinations = hierarchy

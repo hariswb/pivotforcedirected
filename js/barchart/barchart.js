@@ -99,8 +99,6 @@ BarChart.prototype.getDimensionScales = function () {
   } else {
     this.selectedDimension = [...this.dimensionScales.keys()][0]
     this.selectedScale = this.dimensionScales.get(this.selectedDimension)[0]
-
-
   }
 
   function checkDate(val) {

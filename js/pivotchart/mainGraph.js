@@ -34,18 +34,18 @@ MainGraph.prototype.startSimulation = function () {
 
         _this.node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
 
-        // _this.nodeImage
-        //     .attr("height", (d) =>
-        //         d.type === "main"
-        //             ? _this.layout.nodeRadius * _this.layout.imageNodeRatio
-        //             : _this.layout.extraNodeRadius * _this.layout.imageNodeRatio
-        //     )
-        //     .attr("x", (d) =>
-        //         d.type === "main" ? d.x - nodeImageShift : d.x - extraImageShift
-        //     )
-        //     .attr("y", (d) =>
-        //         d.type === "main" ? d.y - nodeImageShift : d.y - extraImageShift
-        //     );
+        _this.nodeImage
+            .attr("height", (d) =>
+                d.type === "main"
+                    ? _this.layout.nodeRadius * _this.layout.imageNodeRatio
+                    : _this.layout.extraNodeRadius * _this.layout.imageNodeRatio
+            )
+            .attr("x", (d) =>
+                d.type === "main" ? d.x - nodeImageShift : d.x - extraImageShift
+            )
+            .attr("y", (d) =>
+                d.type === "main" ? d.y - nodeImageShift : d.y - extraImageShift
+            );
 
         _this.mainHulls.attr("d", function (d) {
             return _this.hullPath(d, "main")
@@ -306,15 +306,15 @@ MainGraph.prototype.addHulls = function () {
         .selectAll("foreignObject");
 }
 
-MainGraph.prototype.updateNodeImage = function () {
+MainGraph.prototype.updateNodeImage = function (nodes) {
     const _this = this
-    let nodes = this.pivotchart.nodes
+    // let nodes = this.pivotchart.nodes
     let iconurl = this.iconurl
     let layout = this.layout
 
 
     this.nodeImage = this.nodeImage
-        .data(this.pivotChart.nodes, d => d.id)
+        .data(nodes, d => d.id)
         .join(
             enter => enter.append("image")
                 .style("pointer-events", "none")
@@ -357,17 +357,17 @@ MainGraph.prototype.updateMainHulls = function () {
         .attr("stroke", layout.hullStroke)
         .attr("stroke-width", layout.hullStrokeWidth);
 
-    // this.nodeImage = this.nodeImage
-    //     .data(this.pivotChart.nodes)
-    //     .join("image")
-    //     .style("pointer-events", "none")
-    //     .attr("href", function (d) {
-    //         if (d.type === "main") {
-    //             return _this.iconUrl.document;
-    //         }
-    //         return _this.iconUrl[d.extra];
-    //     })
-    //     .attr("filter", this.layout.imageFilter);
+    this.nodeImage = this.nodeImage
+        .data(this.pivotChart.nodes)
+        .join("image")
+        .style("pointer-events", "none")
+        .attr("href", function (d) {
+            if (d.type === "main") {
+                return _this.iconUrl.document;
+            }
+            return _this.iconUrl[d.extra];
+        })
+        .attr("filter", this.layout.imageFilter);
 }
 
 MainGraph.prototype.clearColoring = function () {
@@ -638,7 +638,7 @@ MainGraph.prototype.updateExtra = function () {
     this.fociExtra = this.getFociExtra(this.extras);
 
     this.updateNode(this.pivotChart.nodes)
-    // this.updateNodeImage()
+    this.updateNodeImage(this.pivotChart.nodes)
 
     // this.setMainLinks()
     // this.updateLink()

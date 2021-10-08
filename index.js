@@ -6,7 +6,8 @@ let App = function (rawData) {
     this.data = null
     this.keys = Object.keys(this.rawData[0]).filter((d) => d !== "type");
 
-    this.groupBy = ["emotion"]//[this.keys[0],]; // Set default hiearchy attribute
+    // this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
+    this.groupBy = [this.keys[0],]; // Set default hiearchy attribute
 
     this.extras = [];
 
@@ -326,8 +327,8 @@ App.prototype.setDarkMode = function () {
 }
 
 
-// d3.json("static/searchquery56.json")
-d3.json("static/test.json")
+d3.json("static/searchquery56.json")
+    // d3.json("static/test.json")
     .then(function (json) {
         var app = new App(json)
     })

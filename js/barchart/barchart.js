@@ -123,6 +123,17 @@ BarChart.prototype.addBarDimensionSelection = function () {
 
   this.barDimensionButton = this.barDimensionDropdown.append("div").attr("class", "dropdown-button barchart-dropdown-button")
     .on("click", function (event) {
+      this.clicked = this.clicked === undefined ? true : !this.clicked
+      if (this.clicked === true) {
+        d3.select(this)
+          .style("border-radius", " 2px 2px 0px 0px")
+        buttonImg.attr("src", imageUrl.arrowDown)
+      } else {
+        d3.select(this)
+          .style("border-radius", "2px")
+        buttonImg.attr("src", imageUrl.arrowRight)
+      }
+
       _this.barDimensionOptions.classed("hide", !_this.barDimensionOptions.node().classList.contains("hide"))
     })
   const imageUrl = { arrowDown: "./static/arrow_drop_down_black_24dp.svg", arrowRight: "./static/arrow_right_black_24dp.svg" }
@@ -131,6 +142,7 @@ BarChart.prototype.addBarDimensionSelection = function () {
 
   this.barDimensionOptions = this.barDimensionDropdown.append("div")
     .attr("class", "dropdown-dimension-content barchart-dropdown-contents")
+    .style("border-radius", "0px 0px 2px 2px")
     .classed("hide", true)
   this.barDimensionOptions
     .selectAll("span")
@@ -157,6 +169,16 @@ BarChart.prototype.addBarDimensionSelection = function () {
     _this.barScaleDropdown.selectAll("div").remove()
     _this.barScaleButton = _this.barScaleDropdown.append("div").attr("class", "dropdown-button barchart-dropdown-button")
       .on("click", function (event) {
+        this.clicked = this.clicked === undefined ? true : !this.clicked
+        if (this.clicked === true) {
+          d3.select(this)
+            .style("border-radius", " 2px 2px 0px 0px")
+          buttonImg.attr("src", imageUrl.arrowDown)
+        } else {
+          d3.select(this)
+            .style("border-radius", "2px")
+          buttonImg.attr("src", imageUrl.arrowRight)
+        }
         _this.barScaleOptions.classed("hide", !_this.barScaleOptions.node().classList.contains("hide"))
       })
     const imageUrl = { arrowDown: "./static/arrow_drop_down_black_24dp.svg", arrowRight: "./static/arrow_right_black_24dp.svg" }
@@ -209,6 +231,7 @@ BarChart.prototype.setScale = function () {
 
 
 BarChart.prototype.scaleTime = function (keyDimension) {
+  const _this = this
   this.dataRange = {
     start: d3.min(this.app.rawData.map(d => {
       return new Date(new Date(d[keyDimension]).toDateString())
@@ -227,8 +250,15 @@ BarChart.prototype.scaleTime = function (keyDimension) {
   this.createScale = (allDataKeys) => d3
     .scaleTime()
     .domain([d3.min(allDataKeys), d3.max(allDataKeys)])
-  this.getBarwidth = () => 2
-  this.getBaroffset = () => this.barWidth / 4
+  this.getBarwidth = () => {
+    const oneDay = 24 * 60 * 60 * 1000;
+    const dateDiffMs = d3.max(_this.rolledData.keys()) - d3.min(_this.rolledData.keys());
+    const dateNumDiff = Math.round(Math.abs(dateDiffMs / oneDay));
+    const barWidth =
+      (_this.layout.width - _this.layout.margin.left - _this.layout.margin.right) / dateNumDiff;
+    return barWidth * 0.8
+  }
+  this.getBaroffset = () => this.barWidth / 2
 }
 
 BarChart.prototype.scaleLinear = function (keyDimension) {

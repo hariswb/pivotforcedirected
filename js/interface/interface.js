@@ -43,13 +43,22 @@ Interface.prototype.updateDimensions = function () {
     elementGroupDump.addEventListener("dragover", function (event) {
         _this.onDragOverDump(event)
     })
-
     elementGroupDump.addEventListener("drop", function (event) {
         _this.onDropDump(event)
     })
 
+    elementsExtras.addEventListener("dragover", function (event) {
+        _this.onDragOverDump(event)
+    })
+    elementsExtras.addEventListener("drop", function (event) {
+        _this.onDropDump(event)
+    })
+
+
     groupBy.forEach(function (key) {
         const defaultGroup = _this.createDimensionElement(key)
+
+        elementsExtras.removeChild(document.getElementById("extra-" + key))
 
         defaultGroup.addEventListener("dragstart", function (event) {
             _this.onDragStart(event)
@@ -78,9 +87,13 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
     const button = selection.append("div")
         .attr("class", "dropdown-button")
 
+
     const buttonImg = button.append("img").attr("class", "dropdown-button-arrow").attr("src", imageUrl.arrowRight)
 
     const buttonText = button.append("span").html(`${keyName}: ${this.app.dimensionCounts.get(keyName)}`)
+        .style("font-weight", () =>
+            _this.dimensionsMap.get(keyName).some(d => d.show === false) ?
+                "bold" : "normal")
 
     selection
         .append("div")
@@ -106,6 +119,8 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
                         // d3.select(this).style("color", d.show === true ? "#111" : "#bbb")
                         d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
                         _this.app.updateDocumentExcluded(event.type, keyName, d.content, d.show)
+
+                        updateButtonHighlight(keyName)
                     }, 300)
                 }
 
@@ -128,6 +143,8 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
                     _this.app.updateDocumentExcluded(event.type + "-cleared", keyName, d.content, d.show)
                     d.triggered = false
                 }
+
+                updateButtonHighlight(keyName)
                 d3.selectAll(`.${dropdownContentId}`).style("color", d => d.show === true ? "#111" : "#bbb")
             })
         )
@@ -150,6 +167,18 @@ Interface.prototype.addDimensionDropdown = function (divElement, keyName) {
             this.selected = true
         }
     })
+
+    function updateButtonHighlight(keyName) {
+        d3.selectAll(".draggable").style("font-weight", function () {
+            const selectedDimension = d3.select(this)
+            if (selectedDimension.attr("value") === keyName) {
+                selectedDimension.select("div").select("span").style("font-weight", () =>
+                    _this.dimensionsMap.get(keyName).some(d => d.show === false) ?
+                        "bold" : "normal")
+            }
+
+        })
+    }
 }
 
 Interface.prototype.invertColorFilter = function (divElement) {
@@ -189,12 +218,12 @@ Interface.prototype.onDrop = function (event) {
     const draggableElement = document.getElementById(id).cloneNode(true);
     const keyName = draggableElement.getAttribute("value")
 
-    const clonedElement = this.createDimensionElement(keyName)
+    const clonedElement = document.getElementById(id)//this.createDimensionElement(keyName)
 
-    if (draggableElement.classList.contains("as-group")) {
-        clonedElement.classList.add("as-group")
-        _this.invertColorFilter(clonedElement)
-    }
+    // if (draggableElement.classList.contains("as-group")) {
+    //     clonedElement.classList.add("as-group")
+    //     _this.invertColorFilter(clonedElement)
+    // }
 
     const dropZone = event.currentTarget;
 
@@ -267,25 +296,32 @@ Interface.prototype.onDragOverDump = function (event) {
     event.preventDefault();
 }
 
-Interface.prototype.updateInterfaceColor = function (colors) {
-    let inputGroups = document.getElementsByClassName("as-group")
-    for (let item of inputGroups) {
-        item.style.backgroundColor = colors(item.getAttribute("value"))
-    }
-}
-
 Interface.prototype.onDropDump = function (event) {
     const id = event.dataTransfer.getData("text");
     const draggableElement = document.getElementById(id); //.cloneNode(true);
     const parentDragable = document.getElementById("group-by");
 
+    const extraDimensions = document.getElementById("extras")
+
     if (
         draggableElement.classList.contains("as-group") &&
         parentDragable.children.length > 1
     ) {
-        parentDragable.removeChild(draggableElement);
+        draggableElement.classList.remove("as-group");
+        draggableElement.style.backgroundColor = "#ddd"
+        d3.select(draggableElement).select("div").select("img").style("filter", "invert(0)")
+
+        extraDimensions.appendChild(draggableElement)
+        // parentDragable.removeChild(draggableElement);
         this.app.removeGroupBy(draggableElement.getAttribute("value"));
     }
 
     $(".group-dump").css("display", "none");
+}
+
+Interface.prototype.updateInterfaceColor = function (colors) {
+    let inputGroups = document.getElementsByClassName("as-group")
+    for (let item of inputGroups) {
+        item.style.backgroundColor = colors(item.getAttribute("value"))
+    }
 }

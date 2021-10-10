@@ -179,7 +179,7 @@ PivotChart.prototype.addTransform = function () {
     }
 
     function setTransform(g) {
-        const resizeFactor = 2.2
+        const resizeFactor = 2.5
 
         const rootX = _this.treeGraph.treePositions.rootX ? _this.treeGraph.treePositions.rootX : 0
         const rootY = _this.treeGraph.treePositions.rootY ? _this.treeGraph.treePositions.rootY : 0

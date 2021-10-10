@@ -58,7 +58,11 @@ TreeGraph.prototype.startSimulation = function () {
 
         const leaves = []
         const alpha = _this.simulation.alpha()
-        if (alpha < 0.5 && _this.treePositions.show === false) {
+        const alphaThreshold = getAlphaThreshold(_this.treeNodes.length)
+
+        console.log(alphaThreshold)
+
+        if (alpha < alphaThreshold && _this.treePositions.show === false) {
             _this.treeNode
                 .attr("x", (d) => {
                     if (d.group === "fakeRoot") {
@@ -111,6 +115,16 @@ TreeGraph.prototype.startSimulation = function () {
 
         function getFociTree(groupBy, node) {
             return _this.pivotChart.clusterMap.get(groupBy.map((k) => node[k]).join("-") + "-leaf");
+        }
+
+        function getAlphaThreshold(numNodes) {
+            let a = 0.5
+            if (numNodes < 1000) {
+                a = a + (Math.log10(numNodes) / 10)
+            } else {
+                a = a + (-1 / Math.log10(numNodes)) + 0.64
+            }
+            return a
         }
     }
 }
@@ -373,10 +387,6 @@ TreeGraph.prototype.updateTree = function () {
     const maxRadius = d3.max(this.treeNodes.map(d => d.r))
 
     for (node of newtreeNodes) {
-        // if (node.group === "fakeRoot") {
-        //     node.fx = 0
-        //     node.fy = 0
-        // }
         const { posX, posY } = initTreeFoci(node)
         node.x = posX
         node.y = posY
@@ -394,8 +404,8 @@ TreeGraph.prototype.updateTree = function () {
             y = maxRadius * Math.cos(2 * Math.PI * f)
         } else if (node.type === "leaf") {
             const f = leaves.indexOf(node.id) / leaves.length
-            x = 300 * Math.sin(2 * Math.PI * f)
-            y = 300 * Math.cos(2 * Math.PI * f)
+            x = maxRadius * 2 * Math.sin(2 * Math.PI * f)
+            y = maxRadius * 2 * Math.cos(2 * Math.PI * f)
         }
         return { posX: x, posY: y }
     }

@@ -262,6 +262,7 @@ BarChart.prototype.scaleTime = function (keyDimension) {
 }
 
 BarChart.prototype.scaleLinear = function (keyDimension) {
+  const _this = this
   this.dataRange = {
     start: d3.min(this.app.rawData.map(d => d[keyDimension])),
     end: d3.max(this.app.rawData.map(d => d[keyDimension]))
@@ -273,8 +274,12 @@ BarChart.prototype.scaleLinear = function (keyDimension) {
   this.createScale = (allDataKeys) => d3
     .scaleLinear()
     .domain([d3.min(allDataKeys), d3.max(allDataKeys)])
-  this.getBarwidth = () => 2
-  this.getBaroffset = () => this.barWidth / 4
+  this.getBarwidth = () => {
+    const barWidth =
+      (_this.layout.width - _this.layout.margin.left - _this.layout.margin.right) / _this.rolledData.size;
+    return barWidth * 0.8
+  }
+  this.getBaroffset = () => _this.barWidth / 2
 }
 
 BarChart.prototype.scaleOrdinal = function (keyDimension) {
